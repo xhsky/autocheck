@@ -104,5 +104,6 @@ venv.bak/
 
 # sky set
 .*.sw[poz]
+*/*.py[cod]
 */check.info
 

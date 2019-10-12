@@ -10,10 +10,10 @@ import socket
 
 def main():
     printf(f"开始巡检时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    hostname=conf.get("autocheck", "hostname")
+    hostname=conf.get("autocheck", "hostname")[0]
     if hostname is None:
         hostname=socket.gethostname()
-    printf(f"巡检主机: {hostname[0]}")
+    printf(f"巡检主机: {hostname}")
     printf("*"*80)
 
     #host.info()
