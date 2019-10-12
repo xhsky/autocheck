@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from core import host, tomcat, redis, mysql
+from core import host, tomcat, redis, mysql, mail
 from lib.printf import printf
 from lib import conf
 import os, datetime, tarfile
@@ -16,10 +16,11 @@ def main():
     printf(f"巡检主机: {hostname}")
     printf("*"*80)
 
-    #host.info()
+    host.info()
     tomcat.stats()
     redis.stats()
     mysql.stats()
+    mail.send()
 
     printf("*"*80)
     printf(f"结束巡检时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

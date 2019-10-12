@@ -10,6 +10,7 @@ configparser = "*"
 psutil = "*"
 pymysql = "*"
 redis = "*"
+smtplib = "*"
 
 [requires]
 python_version = "3.7"
