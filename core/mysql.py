@@ -128,11 +128,32 @@ def stats():
                                 printf(f"角色: {role}")
                                 printf(f"slave数量: {slave_num}")
                             else:                               # slave信息
-                                print(slave_status)
-                                sql='show master status'
-                                cursor.execute(sql)
-                                master_status=cursor.fetchall()
-                                print(master_status)
+                                role="slave"
+                                for i in slave_status:
+                                    master_host=i[1]
+                                    master_port=i[4]
+                                    replicate_do_db=i[12]
+                                    slave_io_thread=i[10]
+                                    slave_io_state=i[0]
+                                    slave_sql_thread=i[11]
+                                    slave_sql_state=i[44]
+                                    master_uuid=i[40]
+                                    retrieved_gtid_set=i[51]
+                                    executed_gtid_set=i[52]
+                                    seconds_behind_master=i[32]
+
+                                    printf(f"角色: {role}")
+                                    if slave_io_thread.lower()=="no" and slave_sql_thread.lower()=="no":
+                                        printf("同步已关闭")
+                                    else:
+                                        printf(f"Master IP: {master_host}:{master_port}")
+                                        printf(f"同步的数据库: {replicate_do_db}")
+
+                    
+
+
+
+                                    
 
 
 
