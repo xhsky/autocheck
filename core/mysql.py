@@ -131,7 +131,7 @@ def stats():
                                 role="slave"
                                 for i in slave_status:
                                     master_host=i[1]
-                                    master_port=i[4]
+                                    master_port=i[3]
                                     replicate_do_db=i[12]
                                     slave_io_thread=i[10]
                                     slave_io_state=i[0]
@@ -153,7 +153,8 @@ def stats():
                                         printf(f"Slave SQL线程是否开启: {slave_sql_thread}")
                                         printf(f"Slave SQL线程状态: {slave_sql_state}")
                                         printf(f"Master UUID: {master_uuid}")
-                                        printf(f"已接收到的GTID集合: {retrieved_gtid_set}")
+                                        printf(f"已接收的GTID集合: {retrieved_gtid_set}")
+                                        executed_gtid_set=executed_gtid_set.replace('\n', ' ', -1)
                                         printf(f"已执行的GTID集合: {executed_gtid_set}")
                                         printf(f"Slave落后Master的时间(秒): {seconds_behind_master}")
                                         printf("-"*40)
