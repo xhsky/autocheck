@@ -1,0 +1,4 @@
+configparser==4.0.2
+psutil==5.6.3
+PyMySQL==0.9.3
+redis==3.3.8
