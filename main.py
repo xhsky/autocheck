@@ -5,7 +5,7 @@
 from core import host, tomcat, redis, mysql
 from lib.printf import printf
 from lib import conf
-import os, datetime
+import os, datetime, tarfile
 import socket
 
 def main():
@@ -23,6 +23,15 @@ def main():
 
     printf("*"*80)
     printf(f"结束巡检时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    report_files=os.listdir(".")
+    for report_file in report_files:
+        if report_file.startswith("report") and report_file.endswith("tar.gz"):
+            os.remove(report_file)
+    with tarfile.open(f"report-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz", "w:gz") as tar:
+        tar.add("./report")
+
+
     
 if __name__ == "__main__":
     if os.path.exists("report/check.info"):

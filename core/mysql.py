@@ -159,7 +159,7 @@ def stats():
                                         printf(f"Slave落后Master的时间(秒): {seconds_behind_master}")
                                         printf("-"*40)
                 except Exception as e:
-                    print(f"无法连接数据库: {e}")
+                    printf(f"无法连接数据库: {e}")
                 else:
                     conn.close()
             else:
