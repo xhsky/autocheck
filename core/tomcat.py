@@ -62,7 +62,7 @@ def stats():
                 continue
             pid=tomcat_dir_and_pid[i]
             tomcat_info=psutil.Process(pid).as_dict()
-            printf(f"Pid: {pid}")
+            printf(f"Tomcat Pid: {pid}")
 
             tomcat_create_time=datetime.datetime.fromtimestamp(tomcat_info["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
             printf(f"程序启动时间: {tomcat_create_time}")
@@ -80,8 +80,6 @@ def stats():
             printf(f"启动参数: {tomcat_cmdline}")
 
 
-            """ 
-            """
             printf(f"内存回收:")
             if java_home is not None and jstat_duration is not None:
                 jstat_message=jstat(java_home, pid, jstat_duration)

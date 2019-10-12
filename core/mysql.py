@@ -5,6 +5,9 @@
 from lib import conf
 from lib.printf import printf
 import pymysql.cursors
+from psutil import Process
+import datetime
+import os, shutil
 
 def stats():
     # show status where variable_name in ("Uptime")
@@ -42,13 +45,97 @@ def stats():
                         Threads_connected: 连接数
                         Threads_running: 并发数
                         Uptime: 运行时长s
-                        
                         """
-                        #sql='show status where variable_name in ("Uptime", "Threads_running")'
-                        sql='show slave hosts'
+                        # 获取pid
+                        sql='show variables where variable_name="pid_file"'
                         cursor.execute(sql)
-                        result=cursor.fetchall()
-                        print(result)
+                        pid_file=cursor.fetchone()
+                        if pid_file is None or os.path.exists(pid_file[1]) is False:
+                            printf("无法获取MySQL Pid, 请检查MySQL的pid_file变量")
+                        else:
+                            with open(pid_file[1], "r") as f:
+                                pid=int(f.read().strip())
+                                printf(f"MySQL Pid: {pid}")
+
+                            mysql_info=Process(pid).as_dict()
+
+                            mysql_create_time=datetime.datetime.fromtimestamp(mysql_info["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
+                            printf(f"程序启动时间: {mysql_create_time}")
+
+                            mysql_memory_percent=f"{mysql_info['memory_percent']:.2f}"
+                            printf(f"内存占用(%): {mysql_memory_percent}")
+
+                            # 获取连接数
+                            sql='show status where variable_name in ("threads_connected")'
+                            cursor.execute(sql)
+                            connected_num=cursor.fetchone()[1]
+                            printf(f"连接数: {connected_num}")
+
+                            # 获取慢日志
+                            printf("-"*40)
+                            printf("慢日志信息:")
+                            sql='show variables where variable_name="slow_query_log"'
+                            cursor.execute(sql)
+                            slow_query_log=cursor.fetchone()[1].strip().lower()
+                            if slow_query_log=="0" or slow_query_log=="off":
+                                printf("未开启慢日志.")
+                            else:       # 开启了慢日志
+                                sql='show variables where variable_name="log_output"'
+                                cursor.execute(sql)
+                                log_output=cursor.fetchone()[1].strip().lower()
+
+                                if "table" in log_output:           # 格式有table: 只获取当天的慢日志
+                                    sql='select sql_text, start_time, query_time, lock_time, rows_examined from mysql.slow_log where start_time > current_date'
+                                    cursor.execute(sql)
+                                    slow_log_all=cursor.fetchall()
+                                    if len(slow_log_all)==0:
+                                        printf("今天无慢日志生成.")
+                                    else:
+                                        printf("当天的慢日志.")
+                                        for slow_log in slow_log_all:
+                                            sql=slow_log[0].decode("utf8")
+                                            printf(f"SQL: {sql}\n开始执行时间: {slow_log[1]}\n查询时间: {slow_log[2]}\n锁表时间: {slow_log[3]}\n扫描的行数: {slow_log[4]}")
+                                            printf("*"*40)
+                                elif log_output=="file":            # 格式为file: 将慢日志文件拷贝到report目录下, 并清空慢日志文件
+                                        sql='show variables where variable_name="slow_query_log_file"'
+                                        cursor.execute(sql)
+                                        slow_query_log_file=cursor.fetchone()[1].strip().lower()
+                                        if os.path.exists(slow_query_log_file):
+                                            if os.path.getsize(slow_query_log_file) != 0:
+                                                slow_log_file_name=slow_query_log_file.split("/")[-1]
+                                                printf(f"请查看慢日志文件: {slow_log_file_name}")
+                                                shutil.copy(slow_query_log_file, "./report/")
+                                                with open(slow_query_log_file, "r+") as f:
+                                                    f.truncate()
+                                            else:
+                                                printf("未产生慢日志")
+                                        else:
+                                            printf(f"MySQL中定义的慢日志文件({slow_query_log_file})不存在.")
+                            printf("-"*40)
+
+                            # 判断主从状态
+                            printf("主从信息:")
+                            sql='show slave status'
+                            cursor.execute(sql)
+                            slave_status=cursor.fetchall()
+
+                            if len(slave_status)==0:            # master信息
+                                role="master"
+                                sql='show slave hosts'
+                                cursor.execute(sql)
+                                slave_num=len(cursor.fetchall())
+
+                                printf(f"角色: {role}")
+                                printf(f"slave数量: {slave_num}")
+                            else:                               # slave信息
+                                print(slave_status)
+                                sql='show master status'
+                                cursor.execute(sql)
+                                master_status=cursor.fetchall()
+                                print(master_status)
+
+
+
                 except Exception as e:
                     print(f"无法连接数据库: {e}")
                 else:
