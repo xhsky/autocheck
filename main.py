@@ -13,6 +13,6 @@ def main():
 
     
 if __name__ == "__main__":
-    if os.path.exists("check.info"):
-        os.remove("check.info")
+    if os.path.exists("report/check.info"):
+        os.remove("report/check.info")
     main()

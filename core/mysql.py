@@ -148,21 +148,22 @@ def stats():
                                     else:
                                         printf(f"Master IP: {master_host}:{master_port}")
                                         printf(f"同步的数据库: {replicate_do_db}")
-
-                    
-
-
-
-                                    
-
-
-
+                                        printf(f"Slave IO线程是否开启: {slave_io_thread}")
+                                        printf(f"Slave IO线程状态: {slave_io_state}")
+                                        printf(f"Slave SQL线程是否开启: {slave_sql_thread}")
+                                        printf(f"Slave SQL线程状态: {slave_sql_state}")
+                                        printf(f"Master UUID: {master_uuid}")
+                                        printf(f"已接收到的GTID集合: {retrieved_gtid_set}")
+                                        printf(f"已执行的GTID集合: {executed_gtid_set}")
+                                        printf(f"Slave落后Master的时间(秒): {seconds_behind_master}")
+                                        printf("-"*40)
                 except Exception as e:
                     print(f"无法连接数据库: {e}")
                 else:
                     conn.close()
             else:
                 printf("请检查[mysql]配置参数")
+            printf("-"*80)
     
 if __name__ == "__main__":
     main()
