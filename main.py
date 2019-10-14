@@ -2,13 +2,16 @@
 # *-* coding:utf8 *-*
 # sky
 
-from core import host, tomcat, redis, mysql, mail, timing
+from core import host, tomcat, redis, mysql, mail, timing, oracle
 from lib.printf import printf
 from lib import conf
 import os, datetime, tarfile
-import socket
+import socket, shutil
 
 def main():
+    rootdir=os.path.dirname(__file__)
+    os.chdir(rootdir)
+    os.makedirs("report",  exist_ok=True)
     printf(f"开始巡检时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     hostname=conf.get("autocheck", "hostname")[0]
     if hostname is None:
@@ -16,16 +19,16 @@ def main():
     printf(f"巡检主机: {hostname}")
     printf("*"*80)
 
-    #host.info()
+    host.info()
     tomcat.stats()
     redis.stats()
     mysql.stats()
-    mail.send()
-    timing.timing()
+    oracle.info()
 
     printf("*"*80)
     printf(f"结束巡检时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
+    # 巡检报告打包
     report_files=os.listdir(".")
     for report_file in report_files:
         if report_file.startswith("report") and report_file.endswith("tar.gz"):
@@ -33,9 +36,10 @@ def main():
     with tarfile.open(f"report-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz", "w:gz") as tar:
         tar.add("./report")
 
+    mail.send()
+    timing.timing()
 
     
 if __name__ == "__main__":
-    if os.path.exists("report/check.info"):
-        os.remove("report/check.info")
+    shutil.rmtree("./report/", ignore_errors=True)
     main()

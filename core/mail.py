@@ -19,13 +19,12 @@ from lib import conf
 import datetime, os
 
 def send():
-    check, sender, sender_alias, password, receive, receive_alias, smtp_server, subject=conf.get("mail", 
+    check, sender, sender_alias, password, receive, smtp_server, subject=conf.get("mail", 
             "check", 
             "sender", 
             "sender_alias", 
             "password", 
             "receive", 
-            "receive_alias", 
             "smtp_server", 
             "subject"
             )
@@ -34,7 +33,10 @@ def send():
         try:
             message=MIMEMultipart('related')
             message['From']=formataddr([sender_alias, sender])
-            message['To']=formataddr([receive_alias, receive])
+            receive_list=[]
+            for i in receive.split(","):
+                receive_list.append(i.strip())
+            message['To']=','.join(receive_list)
             subject=f"{subject}-{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             message['Subject']=subject
             #message.attach(MIMEText("测试", "plain", "utf-8"))
@@ -52,10 +54,10 @@ def send():
 
             mail_server=smtplib.SMTP(smtp_server, 25)
             mail_server.login(sender, password)             # 登录邮箱
-            mail_server.sendmail(sender, receive, message.as_string())  # 发送邮件
+            mail_server.sendmail(sender, receive_list, message.as_string())  # 发送邮件
             mail_server.quit()
         except Exception as e:
-            printf(f"发送失败: {e}")
+            print(f"发送失败: {e}")
     
 if __name__ == "__main__":
     main()
