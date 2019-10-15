@@ -29,9 +29,9 @@ def timing():
                     else:
                         with open(crontab_file, "a") as f1:
                             f1.write(f"{timing_msg}\n")
-
             else:
-                print(f"未找到{crontab_file}文件, 请安装cron服务")
+                with open(crontab_file, "w") as f1:
+                    f1.write(f"{timing_msg}\n")
         else:
             print(f"配置文件中{pthon_bin}不存在")
 

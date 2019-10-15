@@ -24,14 +24,14 @@
 
 - 下载依赖包
 ```
-# cd autocheck
+# cd /soft/autocheck
 # pip3 install -r whl/requirements.txt
 ```
 
 ## 使用
 - 进入autocheck目录, 并编辑conf/autocheck.conf配置文件以定义巡检项目
   - 配置文件中`#`是注释符号, 注释必须单独占一行, 不能写到配置项后面
-  - 只有当前主机安装软件, 该软件下的check才可置为1
+  - 只有当前主机安装了软件, 该软件下的check才可置为1
 
 ```
 # cd autocheck
