@@ -85,13 +85,13 @@ def stats():
                                 log_output=cursor.fetchone()[1].strip().lower()
 
                                 if "table" in log_output:           # 格式有table: 只获取当天的慢日志
-                                    sql='select sql_text, start_time, query_time, lock_time, rows_examined from mysql.slow_log where start_time > current_date'
+                                    sql='select sql_text,  start_time,  query_time,  lock_time,  rows_examined from mysql.slow_log where start_time > (now()-interval 24 hour)'
                                     cursor.execute(sql)
                                     slow_log_all=cursor.fetchall()
                                     if len(slow_log_all)==0:
-                                        printf("今天无慢日志生成.")
+                                        printf("24小时内无慢日志生成.")
                                     else:
-                                        printf("当天的慢日志.")
+                                        printf("24小时内的慢日志.")
                                         for slow_log in slow_log_all:
                                             sql=slow_log[0].decode("utf8")
                                             printf(f"SQL: {sql}\n开始执行时间: {slow_log[1]}\n查询时间: {slow_log[2]}\n锁表时间: {slow_log[3]}\n扫描的行数: {slow_log[4]}")
