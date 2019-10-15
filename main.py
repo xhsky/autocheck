@@ -19,10 +19,10 @@ def main():
     printf(f"巡检主机: {hostname}")
     printf("*"*80)
 
-    #host.info()
-    #tomcat.stats()
-    #redis.stats()
-    #mysql.stats()
+    host.info()
+    tomcat.stats()
+    redis.stats()
+    mysql.stats()
     backup.cat()
     oracle.info()
 

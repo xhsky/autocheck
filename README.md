@@ -5,17 +5,20 @@
 4. 可巡检Redis(Pid, 启动时间, 连接数, 数据内存, 进程内存, 集群信息, 自定义命令查询, sentinel监控信息)
 5. 可巡检MySQL(Pid, 启动时间, 内存占用, 连接数, 慢日志信息, 主从信息)
 6. 可巡检Oracle表空间信息及生成awr文件
-7. 可定时自动巡检
-8. 可将巡检报告邮件发送指定收件人
+7. 可巡检备份情况
+8. 可定时自动巡检
+9. 可将巡检报告邮件发送指定收件人
 
 ## 安装(Centos7)
 - 安装Python3环境和开发工具
 ```
-# yum install python3 python3-devel -y
+# yum install python3 python3-devel git -y
 ```
 
 - 下载autocheck
 ```
+# mkdir -p /soft/
+# cd /soft/
 # git clone https://github.com/xhsky/autocheck.git
 ```
 
@@ -86,6 +89,7 @@
   oracle_sid=orcl
   # 生成前N个小时的awr报告
   awr_hours=5
+
   [backup]
   # 是否启用备份巡检,  用于查看备份文件状态
   check=1
