@@ -19,13 +19,14 @@ from lib import conf
 import datetime, os
 
 def send():
-    check, sender, sender_alias, password, receive, smtp_server, subject=conf.get("mail", 
+    check, sender, sender_alias, password, receive, smtp_server, smtp_port, subject=conf.get("mail", 
             "check", 
             "sender", 
             "sender_alias", 
             "password", 
             "receive", 
             "smtp_server", 
+            "smtp_port", 
             "subject"
             )
 
@@ -52,7 +53,7 @@ def send():
             attach.add_header('Content-Disposition',  'attachment',  filename='巡检报告.tar.gz')
             message.attach(attach)
 
-            mail_server=smtplib.SMTP(smtp_server, 25)
+            mail_server=smtplib.SMTP(smtp_server, int(smtp_port))
             mail_server.login(sender, password)             # 登录邮箱
             mail_server.sendmail(sender, receive_list, message.as_string())  # 发送邮件
             mail_server.quit()
