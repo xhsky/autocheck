@@ -9,8 +9,6 @@ import os, datetime, tarfile
 import socket, shutil
 
 def main():
-    rootdir=os.path.dirname(__file__)
-    os.chdir(rootdir)
     os.makedirs("report",  exist_ok=True)
     printf(f"开始巡检时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     hostname=conf.get("autocheck", "hostname")[0]
@@ -42,5 +40,7 @@ def main():
 
     
 if __name__ == "__main__":
+    rootdir=os.path.dirname(__file__)
+    os.chdir(rootdir)
     shutil.rmtree("./report/", ignore_errors=True)
     main()
