@@ -34,36 +34,30 @@ def cpu():
 def memory():
     printf("内存信息:")
     mem=psutil.virtual_memory()
-    printf(f"总内存(G): {mem[0]/1024/1024/1024:.02f}")
-    printf(f"可用内存(G): {mem[1]/1024/1024/1024:.02f}")
-    printf(f"已使用(%): {mem[2]:.02f}")  # (total-avail)/total
-    printf(f"已使用内存(G): {mem[3]/1024/1024/1024:.02f}")
-    printf(f"空闲内存(G): {mem[4]/1024/1024/1024:.02f}")
-
-    printf("-"*80)
+    printf(f"总内存(total): {tools.format_size(mem[0])}")
+    printf(f"可用内存(available): {tools.format_size(mem[1])}")
+    printf(f"已用内存(used): {tools.format_size(mem[3])}/{mem[2]}%") # (total-avail)/total
+    printf(f"空闲内存(free): {tools.format_size(mem[4])}")
 
 def swap():
     printf("swap信息:")
     swap_mem=psutil.swap_memory()
-    printf(f"swap大小(G): {swap_mem[0]/1024/1024/1024:.02f}")
-    printf(f"已使用(G): {swap_mem[1]/1024/1024/1024:.02f}")
-    printf(f"未使用(G): {swap_mem[2]/1024/1024/1024:.02f}")
-    printf(f"已使用(%): {swap_mem[4]:.02f}")
-    printf("-"*80)
+    print(swap_mem)
+    printf(f"总swap(total): {tools.format_size(swap_mem[0])}")
+    printf(f"已使用(used): {tools.format_size(swap_mem[1])}/{swap_mem[3]}%")
+    printf(f"未使用(free): {tools.format_size(swap_mem[2])}")
 
 def boot_time():
     printf(f'服务器启动时间: {datetime.datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")}')
-    printf("-"*80)
-
-
-
 
 def info():
     boot_time()
+    printf("-"*80)
     disk()
     printf("-"*80)
     cpu()
     memory()
+    printf("-"*80)
     swap()
     
 if __name__ == "__main__":
