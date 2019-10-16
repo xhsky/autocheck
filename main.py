@@ -18,6 +18,7 @@ def main():
     printf("*"*80)
 
     host.info()
+    printf("-"*80)
     tomcat.stats()
     redis.stats()
     mysql.stats()

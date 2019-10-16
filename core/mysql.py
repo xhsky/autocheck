@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import conf
+from lib import conf, tools
 from lib.printf import printf
 import pymysql.cursors
 from psutil import Process
@@ -63,7 +63,8 @@ def stats():
                             printf(f"程序启动时间: {mysql_create_time}")
 
                             mysql_memory_percent=f"{mysql_info['memory_percent']:.2f}"
-                            printf(f"内存占用(%): {mysql_memory_percent}")
+                            mysql_memory=tools.format_size(psutil.virtual_memory()[0] * mysql_info['memory_percent'] / 100)
+                            printf(f"内存占用: {mysql_memory}/{mysql_memory_percent}%")
 
                             # 获取连接数
                             sql='show status where variable_name in ("threads_connected")'

@@ -3,7 +3,7 @@
 # sky
 
 from lib.printf import printf
-from lib import conf
+from lib import conf, tools
 import psutil
 import datetime
 import subprocess
@@ -68,7 +68,8 @@ def stats():
             printf(f"程序启动时间: {tomcat_create_time}")
 
             tomcat_memory_percent=f"{tomcat_info['memory_percent']:.2f}"
-            printf(f"内存占用(%): {tomcat_memory_percent}")
+            tomcat_memory=tools.format_size(psutil.virtual_memory()[0] * tomcat_info['memory_percent'] / 100)
+            printf(f"内存占用: {tomcat_memory}/{tomcat_memory_percent}%")
 
             tomcat_connections=len(tomcat_info["connections"])
             printf(f"连接数: {tomcat_connections}")

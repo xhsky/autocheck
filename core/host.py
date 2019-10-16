@@ -42,7 +42,6 @@ def memory():
 def swap():
     printf("swap信息:")
     swap_mem=psutil.swap_memory()
-    print(swap_mem)
     printf(f"总swap(total): {tools.format_size(swap_mem[0])}")
     printf(f"已使用(used): {tools.format_size(swap_mem[1])}/{swap_mem[3]}%")
     printf(f"未使用(free): {tools.format_size(swap_mem[2])}")
