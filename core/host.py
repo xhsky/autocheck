@@ -3,21 +3,28 @@
 # sky
 
 from lib.printf import printf
+from lib import tools
 import psutil
 import datetime
 
 def disk():
     printf("磁盘信息:")
-    printf("磁盘\t\t大小(G)  已使用(G) 可用(G)  挂载点")
     all_disk=psutil.disk_partitions()
+
+    disk_name_length=[]         # 获取磁盘名称的长度, 用于下方格式化输出
+    for disk_name in all_disk:
+        disk_name_length.append(len(disk_name[0]))
+    length=max(disk_name_length)
+    space_length=f" "*(length-4)
+
+    printf(f"磁盘{space_length}  大小      已使用            可用      挂载点")
     for i in all_disk:
         size=psutil.disk_usage(i[1])
-        total=f"{size[0]/1024/1024/1024:.2f}"
-        used=f"{size[1]/1024/1024/1024:.2f}"
-        avail=f"{size[2]/1024/1024/1024:.2f}"
-        printf(f"{i[0]}\t{total}  {used}  {avail}  {i[1]}")
-    printf("-"*80)
-
+        total=tools.format_size(size[0])
+        used=f"{tools.format_size(size[1])}/{size[3]}%"
+        free=tools.format_size(size[2])
+        printf(f"{i[0]:<{length}}  {total:<8}  {used:<16}  {free:<8}  {i[1]:<}")
+        
 def cpu():
     printf("CPU信息:")
     printf(f"cpu逻辑核心数: {psutil.cpu_count()}")
@@ -54,6 +61,7 @@ def boot_time():
 def info():
     boot_time()
     disk()
+    printf("-"*80)
     cpu()
     memory()
     swap()
