@@ -19,19 +19,26 @@ from lib import conf
 import datetime, os
 
 def send():
-    check, sender, sender_alias, password, receive, smtp_server, smtp_port, subject=conf.get("mail", 
+    check, sender_alias, receive, subject=conf.get("mail", 
             "check", 
             "sender", 
-            "sender_alias", 
-            "password", 
             "receive", 
-            "smtp_server", 
-            "smtp_port", 
             "subject"
             )
 
     if check=="1":
         try:
+            """网易企业邮箱, 巨坑....
+            1.授权码必须手动指定, 不能自动生成
+            2.企业邮箱的smtp是单独的, 不是统一的
+            3.登录不能有二次验证(短信等)
+            """
+
+            sender="check@dreamdt.cn"
+            password="DreamSoft#1dream"
+
+            smtp_server="smtp.dreamdt.cn"
+            smtp_port=25
             message=MIMEMultipart('related')
             message['From']=formataddr([sender_alias, sender])
             receive_list=[]
@@ -53,7 +60,7 @@ def send():
             attach.add_header('Content-Disposition',  'attachment',  filename='巡检报告.tar.gz')
             message.attach(attach)
 
-            mail_server=smtplib.SMTP(smtp_server, int(smtp_port))
+            mail_server=smtplib.SMTP(smtp_server, smtp_port)
             mail_server.login(sender, password)             # 登录邮箱
             mail_server.sendmail(sender, receive_list, message.as_string())  # 发送邮件
             mail_server.quit()
