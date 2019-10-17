@@ -9,24 +9,18 @@ import datetime
 import subprocess
 import os
 
-def find_tomcat_pids(tomcat_dir_list):
-    """使用 -Dcatalina.home=/data/tomcat 来匹配多个Tomcat.
-    并将配置文件中tomcat_home参数最后的"/"去掉
+def find_tomcat_pids(tomcat_port_list):
+    """根据Tomcat端口获取相应的pid
     """
-    tomcat_dir_and_pid={}
-    for i in tomcat_dir_list:
-        for proc in psutil.process_iter(attrs=["name", "pid", "cmdline"]):
-            match_mode=f"-Dcatalina.home={i}"
-            if match_mode.endswith("/"):
-                match_mode=match_mode[:-1]
-
-            if 'java' in proc.info['name'] and ( match_mode in proc.info['cmdline'] or f"{match_mode}/" in proc.info['cmdline']):
-                tomcat_dir_and_pid[i]=proc.info['pid']
+    tomcat_port_and_pid={}
+    for port in tomcat_port_list:
+        for i in psutil.net_connections(kind='inet'):
+            if port==str(i[3][1]):
+                tomcat_port_and_pid[port]=i[6]
                 break
         else:
-            tomcat_dir_and_pid[i]=0
-
-    return tomcat_dir_and_pid
+            tomcat_port_and_pid[port]=0
+    return tomcat_port_and_pid
 
 def jstat(path, pid, seconds=20):
     #jstat -gcutil 1800 1000 20
@@ -39,9 +33,9 @@ def jstat(path, pid, seconds=20):
         return "0"
 
 def stats():
-    check, tomcat_home, java_home, jstat_duration=conf.get("tomcat",
+    check, tomcat_port, java_home, jstat_duration=conf.get("tomcat",
             "check",
-            "tomcat_home",
+            "tomcat_port",
             "java_home",
             "jstat_duration"
             )
@@ -49,18 +43,18 @@ def stats():
     if check=="1":
         printf("Tomcat信息:")
 
-        tomcat_dir_list=[]                          # 将tomcat_home参数改为列表
-        for i in tomcat_home.split(","):        
-            tomcat_dir_list.append(i.strip())
-        tomcat_dir_and_pid=find_tomcat_pids(tomcat_dir_list)            # 获取Tomcat目录与pid对应的字典
+        tomcat_port_list=[]                          # 将tomcat_port参数改为列表
+        for i in tomcat_port.split(","):        
+            tomcat_port_list.append(i.strip())
+        tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)            # 获取Tomcat端口与pid对应的字典
 
-        for i in tomcat_dir_and_pid:                # 根据pid获取相应信息
+        for i in tomcat_port_and_pid:                # 根据pid获取相应信息
             printf(f"Tomcat({i}):")
-            if tomcat_dir_and_pid[i]==0:
+            if tomcat_port_and_pid[i]==0:
                 printf(f"检查该Tomcat({i})是否启动")
                 printf("-"*40)
                 continue
-            pid=tomcat_dir_and_pid[i]
+            pid=tomcat_port_and_pid[i]
             tomcat_info=psutil.Process(pid).as_dict()
             printf(f"Tomcat Pid: {pid}")
 
