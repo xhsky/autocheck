@@ -8,9 +8,10 @@ import psutil
 import datetime
 
 def disk():
-    printf("磁盘信息:")
     all_disk=psutil.disk_partitions()
 
+    # 显示
+    printf("磁盘信息:")
     disk_name_length=[]         # 获取磁盘名称的长度, 用于下方格式化输出
     for disk_name in all_disk:
         disk_name_length.append(len(disk_name[0]))
@@ -24,20 +25,33 @@ def disk():
         used=f"{tools.format_size(size[1])}/{size[3]}%"
         free=tools.format_size(size[2])
         printf(f"{i[0]:<{length}}  {total:<8}  {used:<16}  {free:<8}  {i[1]:<}")
+
+    # 分析
+    for i in all_disk:
+        size=psutil.disk_usage(i[1])
+        used_percent=size[3]
+        free=size[2]
+        if used_percent > 98 or free < 5*1024*1024*1024:    # 使用率大于95%或可用空间小于5G
+            printf(f"磁盘'{i[1]}'空间不足, 请查看", 1)
         
 def cpu():
     printf("CPU信息:")
     printf(f"cpu逻辑核心数: {psutil.cpu_count()}")
     printf(f"cpu当前利用率(%): {psutil.cpu_percent(interval=5)}")
-    printf("-"*80)
 
 def memory():
     printf("内存信息:")
     mem=psutil.virtual_memory()
+
+    # 显示
     printf(f"总内存(total): {tools.format_size(mem[0])}")
     printf(f"可用内存(available): {tools.format_size(mem[1])}")
     printf(f"已用内存(used): {tools.format_size(mem[3])}/{mem[2]}%") # (total-avail)/total
     printf(f"空闲内存(free): {tools.format_size(mem[4])}")
+
+    # 分析
+    if mem[1] < 2*1024*1024*1024 or mem[2] > 98:
+        printf(f"内存不足, 请查看")
 
 def swap():
     printf("swap信息:")
@@ -55,6 +69,7 @@ def info():
     disk()
     printf("-"*80)
     cpu()
+    printf("-"*80)
     memory()
     printf("-"*80)
     swap()
