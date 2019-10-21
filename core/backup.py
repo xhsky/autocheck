@@ -17,7 +17,7 @@ def show(backup_dirs_dict):
                 ctime=os.path.getctime(j[0])
                 printf(f"文件名: {j[0]}, 大小: {format_size(size)}, 创建时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ctime))}")
         else:
-            printf("该目录不存在.")
+            printf("该目录或指定结尾文件不存在.")
         printf("*"*40)
 
 def analysis(backup_dirs_dict):
@@ -31,6 +31,7 @@ def analysis(backup_dirs_dict):
     for i in backup_dirs_dict:
         if backup_dirs_dict[i] is not None:
             backup_dir_list=sorted(backup_dirs_dict[i].items(), key=lambda d:d[1][1])
+            print(backup_dir_list)
             last_date=backup_dir_list[-1][1][1]
 
             if time.strftime('%Y-%m-%d', time.localtime(last_date))!=time.strftime('%Y-%m-%d', time.localtime(now_date)):
@@ -42,7 +43,7 @@ def analysis(backup_dirs_dict):
                     else:
                         printf(f"备份({i})正常.", 1)
         else:
-            printf(f"备份目录{i}不存在.", 1)
+            printf(f"备份目录{i}或指定结尾文件不存在.", 1)
 
 def collect(backup_dict):
     """收集信息
@@ -51,12 +52,16 @@ def collect(backup_dict):
     for i in backup_dict:
         backup_dir_dict={}
         if os.path.exists(i):
+            flag=0
             for j in os.listdir(i):
                 filename=f"{i}/{j}"
                 if  os.path.isfile(filename) and filename.endswith(backup_dict[i]):
                     size=os.path.getsize(filename)
                     ctime=os.path.getctime(filename)
                     backup_dir_dict[filename]=(size, ctime)
+                    flag=1
+            if flag==0:
+                backup_dir_dict=None
         else:
             backup_dir_dict=None
 
