@@ -26,6 +26,7 @@ def analysis(backup_dirs_dict):
     2. 当天的备份文件未生成则提示
     3. 当天的备份文件小于上一个的大小的99%则提示
     """
+    printf("备份信息:", 1)
     now_date=time.time()
     for i in backup_dirs_dict:
         if backup_dirs_dict[i] is not None:
@@ -33,11 +34,13 @@ def analysis(backup_dirs_dict):
             last_date=backup_dir_list[-1][1][1]
 
             if time.strftime('%Y-%m-%d', time.localtime(last_date))!=time.strftime('%Y-%m-%d', time.localtime(now_date)):
-                printf(f"备份目录{i}下未生成今天的备份.", 1)
+                printf(f"备份({i})下未生成今天的备份.", 1)
             else:
                 if len(backup_dir_list) > 1:
                     if backup_dir_list[-1][1][0] < backup_dir_list[-2][1][0] * 0.99:
-                        printf(f"备份目录{i}下今天的备份文件({format_size(backup_dir_list[-1][1][0])})与之前的备份文件({format_size(backup_dir_list[-2][1][0])})相差较大.", 1)
+                        printf(f"备份({i})下今天的备份文件({format_size(backup_dir_list[-1][1][0])})与之前的备份文件({format_size(backup_dir_list[-2][1][0])})相差较大.", 1)
+                    else:
+                        printf(f"备份({i})正常.", 1)
         else:
             printf(f"备份目录{i}不存在.", 1)
 

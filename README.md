@@ -131,6 +131,30 @@
 若配置了邮件发送, 则会将当前目录下的以report开头的压缩文件(eg: report-201910150917.tar.gz)发送给收件人
 
 ## 巡检报告示例:
+### warning:
+```
+磁盘空间正常.
+内存空间正常.
+Tomcat信息:
+Tomcat(8080):
+YGC回收正常.
+FGC回收正常.
+Tomcat(8081):
+YGC回收正常.
+FGC回收正常.
+Tomcat(8082):
+检查该Tomcat(8082)是否启动
+Redis信息:
+slave(127.0.0.1:6379)连接正常.
+Sentinel信息:
+master ip: 127.0.0.1:6379
+slave ip: 127.0.0.1:6378
+备份信息:
+备份(/data)下未生成今天的备份.
+备份(/data2)正常.
+```
+
+### check.info
 ```
 开始巡检时间: 2019-10-15 09:17:11                                                                                                                                            
 巡检主机: dream                                                                                                                                                              
@@ -139,33 +163,31 @@
 --------------------------------------------------------------------------------                                                                                             
 磁盘信息:
 磁盘            大小(G)  已使用(G) 可用(G)  挂载点
-/dev/sda2       53.97  14.92  39.05  /
-/dev/sda1       1.99  0.15  1.84  /boot
+/dev/sda2       53.97    14.92     39.05    /
+/dev/sda1       1.99     0.15      1.84     /boot
 --------------------------------------------------------------------------------
-CPU信息:
+CPU信息:                                                                                                                                                                     
 cpu逻辑核心数: 8
-cpu当前利用率(%): 0.1
+cpu当前利用率(%): 3.7                                                                                                                                                        
 --------------------------------------------------------------------------------
-内存信息:
-总内存(G): 15.67
-可用内存(G): 13.48
-已使用(%): 14.00
-已使用内存(G): 0.68
-空闲内存(G): 12.03
+内存信息:                                                                                                                                                                    
+总内存(total): 15.55G
+可用内存(available): 11.44G                                                                                                                                                  
+已用内存(used): 3.24G/26.4%
+空闲内存(free): 8.36G                                                                                                                                                        
 --------------------------------------------------------------------------------
-swap信息:
-swap大小(G): 4.00
-已使用(G): 0.00
-未使用(G): 4.00
-已使用(%): 0.00
+swap信息:                                                                                                                                                                    
+总swap(total): 3.73G
+已使用(used): 0.00k/0.0%
+未使用(free): 3.73G
 --------------------------------------------------------------------------------
-Tomcat信息:                                                                                                                                                                   
-Tomcat(/data/tomcat):                                                                                                                                                         
-Tomcat Pid: 48                                                                                                                                                                
-程序启动时间: 2019-10-15 02:30:24                                                                                                                                             
-内存占用(%): 1.18                                                                                                                                                             
-连接数: 3                                                                                                                                                                     
-线程数: 647                                                                                                                                                                   
+Tomcat信息:
+Tomcat(8080):
+Tomcat Pid: 84
+程序启动时间: 2019-10-21 01:59:12
+内存占用: 218.15M/1.37%
+连接数: 3
+线程数: 647
 启动参数: ['/data/jdk/bin/java', '-Djava.util.logging.config.file=/data/tomcat/conf/logging.properties', '-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager', 
 '-server', '-XX:+AggressiveOpts', '-XX:+UseBiasedLocking', '-XX:+DisableExplicitGC', '-XX:+UseConcMarkSweepGC', '-XX:+UseParNewGC', '-XX:+CMSParallelRemarkEnabled', '-XX:+Use
 FastAccessorMethods', '-XX:+UseCMSInitiatingOccupancyOnly', '-Djava.security.egd=file:/dev/./urandom', '-Djava.awt.headless=true', '-Xms8092M', '-Xmx8092M', '-Xss512k', '-XX:
@@ -192,12 +214,12 @@ he.catalina.startup.Bootstrap', 'start']
   0.00  46.37  44.13   0.00  96.79  88.93      1    0.024     0    0.000    0.024
   0.00  46.37  44.13   0.00  96.79  88.93      1    0.024     0    0.000    0.024
 ----------------------------------------                                                                                                                                      
-Tomcat(/data/tomcat1):                                                                                                                                                        
-Tomcat Pid: 707                                                                                                                                                               
-程序启动时间: 2019-10-15 02:30:31                                                                                                                                             
-内存占用(%): 1.13                                                                                                                                                             
+Tomcat(8081):                                                                                                                                                                 
+Tomcat Pid: 745                                                                                                                                                               
+程序启动时间: 2019-10-21 01:59:22                                                                                                                                             
+内存占用: 199.76M/1.25%                                                                                                                                                       
 连接数: 3                                                                                                                                                                     
-线程数: 447                                                                                                                                                                   
+线程数: 447
 启动参数: ['/data/jdk/bin/java', '-Djava.util.logging.config.file=/data/tomcat1/conf/logging.properties', '-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager',
  '-server', '-XX:+AggressiveOpts', '-XX:+UseBiasedLocking', '-XX:+DisableExplicitGC', '-XX:+UseConcMarkSweepGC', '-XX:+UseParNewGC', '-XX:+CMSParallelRemarkEnabled', '-XX:+Us
 eFastAccessorMethods', '-XX:+UseCMSInitiatingOccupancyOnly', '-Djava.security.egd=file:/dev/./urandom', '-Djava.awt.headless=true', '-Xms8092M', '-Xmx8092M', '-Xss512k', '-XX

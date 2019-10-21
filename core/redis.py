@@ -7,6 +7,13 @@ from lib import conf
 from lib.printf import printf
 import psutil, datetime
 
+
+def analysis(role, ip, state):
+    if state=="up" or state=="online":
+        printf(f"{role}({ip})连接正常.", 1)
+    else:
+        printf(f"{role}({ip})无法连接.", 1)
+
 def stats():
     check, password, redis_port, sentinel_port, sentinel_name, commands=conf.get("redis",
             "check",
@@ -20,7 +27,7 @@ def stats():
     if check=="1":
         """redis信息
         """
-        printf("Redis信息:")
+        printf("Redis信息:", 2)
         try:
             normal=1
             conn=Redis(host="127.0.0.1",  port=redis_port, password=password)
@@ -53,9 +60,11 @@ def stats():
                         slave=f"slave{i}"
                         ip=f"{redis_info[slave]['ip']}:{redis_info[slave]['port']}"
                         printf(f"{slave}信息: ip: {ip}, state: {redis_info[slave]['state']}")
+                        analysis(role, ip, redis_info[slave]['state'])
             elif role=="slave":
                 ip=f"{redis_info['master_host']}:{redis_info['master_port']}"
                 printf(f"master信息: ip: {ip}, state: {redis_info['master_link_status']}")
+                analysis(role, ip, redis_info['master_link_status'])
 
             """显示自定义命令
             """
@@ -70,13 +79,13 @@ def stats():
 
             conn.close()
         elif normal==0:
-            printf(f"无法连接redis: {msg}")
+            printf(f"无法连接redis: {msg}", 2)
 
         printf("-"*40)
         """sentinel信息
         """
         if sentinel_port is not None:
-            printf("Sentinel信息:")
+            printf("Sentinel信息:", 2)
             conn=sentinel.Sentinel(
                     [('127.0.0.1', sentinel_port)], 
                     socket_timeout=1
@@ -84,14 +93,14 @@ def stats():
             try:
                 master=conn.discover_master(sentinel_name)
                 slaves=conn.discover_slaves(sentinel_name)
-                printf(f"master ip: {master[0]}:{master[1]}")
+                printf(f"master ip: {master[0]}:{master[1]}", 2)
                 if len(slaves)==0:
-                    printf(f"slave ip: 无")
+                    printf(f"slave ip: 无", 2)
                 else:
                     for i in slaves:
-                        printf(f"slave ip: {i[0]}:{i[1]}")
+                        printf(f"slave ip: {i[0]}:{i[1]}", 2)
             except Exception as e:
-                printf(f"无法获取sentinel信息, 请检查配置文件: {e}")
+                printf(f"无法获取sentinel信息, 请检查配置文件: {e}", 2)
 
         printf("-"*80)
         

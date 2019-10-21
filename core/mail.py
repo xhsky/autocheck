@@ -49,7 +49,7 @@ def send():
                 with open(warning_file, "r") as f:
                     mail_body=f.read()
             else:
-                mail_body="今天无预警内容"
+                mail_body="预警文件缺失"
 
             mail_body=f"预警信息:\n{mail_body}\n\n详细巡检信息请查看附件."
             cmd='top -b -n 1 -o %MEM | head -n 15'

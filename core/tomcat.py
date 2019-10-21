@@ -32,6 +32,34 @@ def jstat(path, pid, seconds=20):
     else:
         return "0"
 
+def analysis(message):
+    ygc=[]
+    fgc=[]
+    for i in message.splitlines()[1:]:
+        i=i.split()
+        if float(i[6])==0:
+            ygc.append(0)
+        else:
+            ygc.append(float(i[7])/float(i[6]))
+        if float(i[8])==0:
+            fgc.append(0)
+        else:
+            fgc.append(float(i[9])/float(i[8]))
+
+    ygc_max_time=max(ygc)
+    fgc_max_time=max(fgc)
+    ygc_warning_value=5
+    fgc_warning_value=10
+
+    if ygc_max_time > ygc_warning_value:
+        printf(f"YGC每次时间为{ygc_max_time}秒.", 1)
+    else:
+        printf("YGC回收正常.", 1)
+    if fgc_max_time > fgc_warning_value:
+        printf(f"FGC每次时间为{fgc_max_time}秒", 1)
+    else:
+        printf("FGC回收正常.", 1)
+    
 def stats():
     check, tomcat_port, java_home, jstat_duration=conf.get("tomcat",
             "check",
@@ -41,7 +69,7 @@ def stats():
             )
 
     if check=="1":
-        printf("Tomcat信息:")
+        printf("Tomcat信息:", 2)
 
         tomcat_port_list=[]                          # 将tomcat_port参数改为列表
         for i in tomcat_port.split(","):        
@@ -49,9 +77,9 @@ def stats():
         tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)            # 获取Tomcat端口与pid对应的字典
 
         for i in tomcat_port_and_pid:                # 根据pid获取相应信息
-            printf(f"Tomcat({i}):")
+            printf(f"Tomcat({i}):", 2)
             if tomcat_port_and_pid[i]==0:
-                printf(f"检查该Tomcat({i})是否启动")
+                printf(f"检查该Tomcat({i})是否启动", 2)
                 printf("-"*40)
                 continue
             pid=tomcat_port_and_pid[i]
@@ -80,6 +108,7 @@ def stats():
                 jstat_message=jstat(java_home, pid, jstat_duration)
                 if jstat_message!="0":
                     printf(f"{jstat_message}")
+                    analysis(jstat_message)
                 else:
                     printf(f"请检查配置文件, java_home参数的配置无法找到{java_home}/bin/jstat, 故不能进行jvm内存回收检查")
             else:

@@ -27,12 +27,19 @@ def disk():
         printf(f"{i[0]:<{length}}  {total:<8}  {used:<16}  {free:<8}  {i[1]:<}")
 
     # 分析
+    normal=0
     for i in all_disk:
         size=psutil.disk_usage(i[1])
         used_percent=size[3]
         free=size[2]
-        if used_percent > 98 or free < 5*1024*1024*1024:    # 使用率大于95%或可用空间小于5G
-            printf(f"磁盘'{i[1]}'空间不足, 请查看", 1)
+        warning_value=95
+        if used_percent > warning_value:     # 使用率大于95%或可用空间小于5G
+            printf(f"磁盘'{i[1]}'空间已超过{warning_value}%, 请查看", 1)
+            normal=1
+
+    if normal==0:
+        printf("磁盘空间正常.", 1)
+
         
 def cpu():
     printf("CPU信息:")
@@ -50,8 +57,14 @@ def memory():
     printf(f"空闲内存(free): {tools.format_size(mem[4])}")
 
     # 分析
-    if mem[1] < 2*1024*1024*1024 or mem[2] > 98:
-        printf(f"内存不足, 请查看")
+    warning_value=95
+    if mem[2] > warning_value:
+        printf(f"内存使用已超过{warning_value}%.")
+        normal=1
+
+    normal=0
+    if normal==0:
+        printf("内存空间正常.", 1)
 
 def swap():
     printf("swap信息:")

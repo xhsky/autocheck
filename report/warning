@@ -1,0 +1,20 @@
+磁盘空间正常.
+内存空间正常.
+Tomcat信息:
+Tomcat(8080):
+YGC回收正常.
+FGC回收正常.
+Tomcat(8081):
+YGC回收正常.
+FGC回收正常.
+Tomcat(8082):
+检查该Tomcat(8082)是否启动
+Redis信息:
+slave(127.0.0.1:6379)连接正常.
+Sentinel信息:
+master ip: 127.0.0.1:6379
+slave ip: 127.0.0.1:6378
+备份信息:
+备份(/data)下未生成今天的备份.
+备份(/data2)正常.
+备份目录/data3不存在.
