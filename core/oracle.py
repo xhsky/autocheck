@@ -43,8 +43,10 @@ def info():
             printf(f"表空间名称    表空间大小    已使用表空间    未使用表空间    使用率(%)")
             for i in message.splitlines():
                 i=i.split()
-                row=f"{i[0]:<14}{format_size(i[1]):<17}{format_size(i[2]):<20}{format_size(i[3]):<18}{format_size(i[4]):<8}"
+                row=f"{i[0]:<14}{format_size(i[1]):<14}{format_size(i[2]):<17}{format_size(i[3]):<17}{i[4]:<4}"
                 printf(row)
+                if float(i[4]) > 95:
+                    printf(f"Oracle: {i[0]}表空间不足, 已使用{i[4]}%", 1)
 
             # awr
             printf("-"*40)
