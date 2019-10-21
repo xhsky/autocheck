@@ -8,6 +8,7 @@
 7. 可巡检备份情况
 8. 可定时自动巡检
 9. 可将巡检报告邮件发送指定收件人
+10. 会在邮件正文中显示资源预警信息
 
 ## 安装(Centos7)
 - 安装Python3环境和开发工具
@@ -61,7 +62,7 @@
   # redis的密码                                                                                                                                                                 
   password=xxxxxxxxxxxx
   # redis端口                                                                                                                                                                   
-  redis_port=6378                                                                                                                                                               
+  redis_port=6379
   # 若未安装sentinel, 则注释掉下面两项                                                                                                                                          
   # sentinel端口                                                                                                                                                                
   sentinel_port=26379                                                                                                                                                           
@@ -85,16 +86,16 @@
   [oracle]
   # 是否巡检Oracle
   check=1
-  # Oracle SID
-  oracle_sid=orcl
   # 生成前N个小时的awr报告
   awr_hours=5
 
   [backup]
-  # 是否启用备份巡检,  用于查看备份文件状态
+  # 是否启用备份巡检, 用于查看备份文件状态
   check=1
-  # 指定备份文件的目录. 可设置多个目录, 以, 分隔
+  # 指定备份文件的目录. 可设置多个目录, 以,分隔
   dir=/data1,  /data2
+  # 指定备份文件的通用结尾, 多个目录以,分隔
+  regular=tar.gz, tar.gz, tar.gz
   
   [timing]
   # 是否启用定时巡检功能
@@ -109,16 +110,10 @@
   [mail]
   # 是否自动将巡检报告发送邮件
   check=1
-  # 发送者的邮箱地址
-  sender=xxx1@163.com
-  # 发送者的别名
+  # 发送者的名称
   sender_alias=xxx
-  # 发送者的授权码, 可查看https://jingyan.baidu.com/article/adc815139f60c2f723bf7385.html教程设置smtp并开启授权码                                                              
-  password=xxxxxx
-  # SMTP服务器
-  smtp_server=smtp.163.com
-  # 收件人的邮箱地址(多个邮箱以,分隔, 必须有发送者的邮箱以免被系统屏蔽)
-  receive=xxx1@163.com, xxx2@dreamdt.cn
+  # 收件人的邮箱地址(多个邮箱以,分隔)
+  receive=xxx@dreamdt.cn, xxx@qq.com
   # 邮件标题
   subject=**项目巡检
 ```
@@ -127,8 +122,8 @@
 ```
 # ./main.py
 ```
-- 执行时间根据巡检项目的数量而定,执行完毕后没有任何输出即为成功. 巡检报告在report目录下的check.info文件. 
-若配置了邮件发送, 则会将当前目录下的以report开头的压缩文件(eg: report-201910150917.tar.gz)发送给收件人
+- 执行时间根据巡检项目的数量而定,执行完毕后没有任何输出即为成功. 巡检报告为report目录下的check.info文件, 预警信息为warning文件
+若配置了邮件发送, 则会将当前目录下的以report开头的压缩文件(eg: report-201910150917.tar.gz)发送给收件人, 且在邮件中正文中会显示预警信息
 
 ## 巡检报告示例:
 ### warning:
