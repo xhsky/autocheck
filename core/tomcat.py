@@ -26,7 +26,7 @@ def jstat(path, pid, seconds=20):
     #jstat -gcutil 1800 1000 20
     jstat_path=f"{path}/bin/jstat"
     if os.path.exists(jstat_path):
-        cmd=f"{jstat_path} -gcutil {pid} 1000 {seconds}"
+        cmd=f"jstat -gcutil {pid} 1000 {seconds}"
         (status, message)=subprocess.getstatusoutput(cmd)
         return message
     else:
