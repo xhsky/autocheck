@@ -2,19 +2,19 @@
 内存空间正常.
 Tomcat信息:
 Tomcat(8080):
-YGC回收正常.
-FGC回收正常.
+检查该Tomcat(8080)是否启动
 Tomcat(8081):
-YGC回收正常.
-FGC回收正常.
+检查该Tomcat(8081)是否启动
 Tomcat(8082):
 检查该Tomcat(8082)是否启动
 Redis信息:
-slave(127.0.0.1:6379)连接正常.
+无法连接redis: Error 111 connecting to 127.0.0.1:6378. Connection refused.
 Sentinel信息:
-master ip: 127.0.0.1:6379
-slave ip: 127.0.0.1:6378
+无法获取sentinel信息, 请检查配置文件: No master found for 'mymaster'
+慢日志信息:
+请查看慢日志分析文件slow_analysis.log及慢日志文件slow.log
+数据库同步状态正常
 备份信息:
-备份(/data)下未生成今天的备份.
-备份(/data2)正常.
-备份目录/data3不存在.
+备份目录/data或指定结尾文件不存在.
+备份目录/data2或指定结尾文件不存在.
+备份目录/data3或指定结尾文件不存在.
