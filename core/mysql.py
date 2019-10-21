@@ -5,9 +5,9 @@
 from lib import conf, tools
 from lib.printf import printf
 import pymysql.cursors
-from psutil import Process
+import psutil
 import datetime
-import os, shutil
+import os, shutil, subprocess
 
 def stats():
     # show status where variable_name in ("Uptime")
@@ -57,7 +57,7 @@ def stats():
                                 pid=int(f.read().strip())
                                 printf(f"MySQL Pid: {pid}")
 
-                            mysql_info=Process(pid).as_dict()
+                            mysql_info=psutil.Process(pid).as_dict()
 
                             mysql_create_time=datetime.datetime.fromtimestamp(mysql_info["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
                             printf(f"程序启动时间: {mysql_create_time}")
@@ -74,7 +74,7 @@ def stats():
 
                             # 获取慢日志
                             printf("-"*40)
-                            printf("慢日志信息:")
+                            printf("慢日志信息:", 2)
                             sql='show variables where variable_name="slow_query_log"'
                             cursor.execute(sql)
                             slow_query_log=cursor.fetchone()[1].strip().lower()
@@ -85,6 +85,25 @@ def stats():
                                 cursor.execute(sql)
                                 log_output=cursor.fetchone()[1].strip().lower()
 
+                                if "file" in log_output:            # 格式为file: 将慢日志文件拷贝到report目录下, 并清空慢日志文件
+                                        sql='show variables where variable_name="slow_query_log_file"'
+                                        cursor.execute(sql)
+                                        slow_query_log_file=cursor.fetchone()[1].strip().lower()
+                                        if os.path.exists(slow_query_log_file):
+                                            if os.path.getsize(slow_query_log_file) != 0:
+                                                cmd=f"mysqldumpslow -s at -t 10 {slow_query_log_file} > ./report/slow_analysis.log"
+                                                status, message=subprocess.getstatusoutput(cmd)
+                                                shutil.copy(slow_query_log_file, "report/slow.log")
+                                                with open(slow_query_log_file, "r+") as f:
+                                                    f.truncate()
+                                                printf("请查看慢日志分析文件slow_analysis.log及慢日志文件slow.log", 2)
+                                            else:
+                                                printf("未产生慢日志", 2)
+                                        else:
+                                            printf(f"MySQL中定义的慢日志文件({slow_query_log_file})不存在.")
+                                else:
+                                    printf(f"MySQL参数log_output未定义为file, 无法分析慢日志")
+                                """
                                 if "table" in log_output:           # 格式有table: 只获取当天的慢日志
                                     sql='select sql_text,  start_time,  query_time,  lock_time,  rows_examined from mysql.slow_log where start_time > (now()-interval 24 hour)'
                                     cursor.execute(sql)
@@ -112,6 +131,7 @@ def stats():
                                                 printf("未产生慢日志")
                                         else:
                                             printf(f"MySQL中定义的慢日志文件({slow_query_log_file})不存在.")
+                                """
                             printf("-"*40)
 
                             # 判断主从状态
@@ -145,7 +165,7 @@ def stats():
 
                                     printf(f"角色: {role}")
                                     if slave_io_thread.lower()=="no" and slave_sql_thread.lower()=="no":
-                                        printf("同步已关闭")
+                                        printf("数据库同步已关闭", 2)
                                     else:
                                         printf(f"Master IP: {master_host}:{master_port}")
                                         printf(f"同步的数据库: {replicate_do_db}")
@@ -158,6 +178,11 @@ def stats():
                                         executed_gtid_set=executed_gtid_set.replace('\n', ' ', -1)
                                         printf(f"已执行的GTID集合: {executed_gtid_set}")
                                         printf(f"Slave落后Master的时间(秒): {seconds_behind_master}")
+
+                                        if slave_io_thread.lower()=="yes" and slave_sql_thread.lower()=="yes":
+                                            printf("数据库同步状态正常", 1)
+                                        else:
+                                            printf("数据库同步状态不正常", 1)
                                         printf("-"*40)
                 except Exception as e:
                     printf(f"无法连接数据库: {e}")

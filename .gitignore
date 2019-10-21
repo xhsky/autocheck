@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.bak
 awr.html
+warning
 
 # C extensions
 *.so
