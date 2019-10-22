@@ -36,14 +36,11 @@ def analysis(message):
     ygc=[]
     fgc=[]
     columns=message.splitlines()[0].split()
-    print(columns)
 
     ygc_column=columns.index("YGC")
     ygct_column=columns.index("YGCT")
     fgc_column=columns.index("FGC")
     fgct_column=columns.index("FGCT")
-
-    print(ygc_column, ygct_column, fgc_column, fgct_column)
 
     for i in message.splitlines()[1:]:
         i=i.split()
