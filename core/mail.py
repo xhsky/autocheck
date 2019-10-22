@@ -52,7 +52,7 @@ def send():
                 mail_body="预警文件缺失"
 
             mail_body=f"预警信息:\n{mail_body}\n\n详细巡检信息请查看附件."
-            cmd='top -b -n 1 -o %MEM | head -n 15'
+            cmd='top -b -n 1 | head -n 15'
             status, top_msg=subprocess.getstatusoutput(cmd)
             mail_body=f"主机负载简图:\n{top_msg}\n\n\n{'*'*80}\n\n\n{mail_body}"
 
