@@ -35,16 +35,23 @@ def jstat(path, pid, seconds=20):
 def analysis(message):
     ygc=[]
     fgc=[]
+    columns=message.splitlines()[0].split()
+
+    ygc_column=columns.index("YGC")
+    ygct_column=columns.index("YGCT")
+    fgc_column=columns.index("FGC")
+    fgct_column=columns.index("FGCT")
+
     for i in message.splitlines()[1:]:
         i=i.split()
-        if float(i[6])==0:
+        if float(i[ygc_column])==0:
             ygc.append(0)
         else:
-            ygc.append(float(i[7])/float(i[6]))
-        if float(i[8])==0:
+            ygc.append(float(i[ygct_column])/float(i[ygc_column]))
+        if float(i[fgc_column])==0:
             fgc.append(0)
         else:
-            fgc.append(float(i[9])/float(i[8]))
+            fgc.append(float(i[fgct_column])/float(i[fgc_column]))
 
     ygc_max_time=max(ygc)
     fgc_max_time=max(fgc)
