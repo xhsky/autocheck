@@ -40,6 +40,7 @@ def info():
         cmd=f"su - oracle -c 'sqlplus -S / as sysdba <<EOF\n{sql}\nEOF'"
         (status, message)=subprocess.getstatusoutput(cmd)
         if status==0:
+            flag=0
             printf(f"表空间名称    表空间大小    已使用表空间    未使用表空间    使用率(%)")
             for i in message.splitlines():
                 i=i.split()
@@ -47,6 +48,9 @@ def info():
                 printf(row)
                 if float(i[4]) > 95:
                     printf(f"Oracle: {i[0]}表空间不足, 已使用{i[4]}%", 1)
+                    flag=1
+            if flag==0:
+                printf(f"Oracle: 表空间正常", 1)
 
             # awr
             printf("-"*40)
