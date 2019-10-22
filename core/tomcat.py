@@ -52,11 +52,11 @@ def analysis(message):
     fgc_warning_value=10
 
     if ygc_max_time > ygc_warning_value:
-        printf(f"YGC每次时间为{ygc_max_time}秒.", 1)
+        printf(f"YGC每次时间为{ygc_max_time:.2f}秒.", 1)
     else:
         printf("YGC回收正常.", 1)
     if fgc_max_time > fgc_warning_value:
-        printf(f"FGC每次时间为{fgc_max_time}秒", 1)
+        printf(f"FGC每次时间为{fgc_max_time:.2f}秒", 1)
     else:
         printf("FGC回收正常.", 1)
     
