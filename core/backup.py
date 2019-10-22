@@ -31,7 +31,6 @@ def analysis(backup_dirs_dict):
     for i in backup_dirs_dict:
         if backup_dirs_dict[i] is not None:
             backup_dir_list=sorted(backup_dirs_dict[i].items(), key=lambda d:d[1][1])
-            print(backup_dir_list)
             last_date=backup_dir_list[-1][1][1]
 
             if time.strftime('%Y-%m-%d', time.localtime(last_date))!=time.strftime('%Y-%m-%d', time.localtime(now_date)):

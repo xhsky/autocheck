@@ -10,9 +10,9 @@ import psutil, datetime
 
 def analysis(role, ip, state):
     if state=="up" or state=="online":
-        printf(f"{role}({ip})连接正常.", 1)
+        printf(f"Redis: {role}({ip})连接正常.", 1)
     else:
-        printf(f"{role}({ip})无法连接.", 1)
+        printf(f"Redis: {role}({ip})无法连接.", 1)
 
 def stats():
     check, password, redis_port, sentinel_port, sentinel_name, commands=conf.get("redis",
@@ -27,7 +27,7 @@ def stats():
     if check=="1":
         """redis信息
         """
-        printf("Redis信息:", 2)
+        printf("Redis信息:")
         try:
             normal=1
             conn=Redis(host="127.0.0.1",  port=redis_port, password=password)

@@ -14,8 +14,8 @@ def find_tomcat_pids(tomcat_port_list):
     """
     tomcat_port_and_pid={}
     for port in tomcat_port_list:
-        for i in psutil.net_connections(kind='inet'):
-            if port==str(i[3][1]):
+        for i in psutil.net_connections():
+            if port==str(i[3][1]) and i[6] is not None:
                 tomcat_port_and_pid[port]=i[6]
                 break
         else:
