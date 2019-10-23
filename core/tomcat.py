@@ -55,17 +55,17 @@ def analysis(message):
 
     ygc_max_time=max(ygc)
     fgc_max_time=max(fgc)
-    ygc_warning_value=5
+    ygc_warning_value=1
     fgc_warning_value=10
 
     if ygc_max_time > ygc_warning_value:
         printf(f"YGC每次时间为{ygc_max_time:.2f}秒.", 1)
     else:
-        printf("YGC回收正常.", 1)
+        printf(f"YGC回收正常({ygc_max_time:.2f}秒).", 1)
     if fgc_max_time > fgc_warning_value:
         printf(f"FGC每次时间为{fgc_max_time:.2f}秒", 1)
     else:
-        printf("FGC回收正常.", 1)
+        printf(f"FGC回收正常({fgc_max_time:.2f}秒).", 1)
     
 def stats():
     check, tomcat_port, java_home, jstat_duration=conf.get("tomcat",
