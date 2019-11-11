@@ -14,6 +14,7 @@
 10. 可显示预警信息(对磁盘, 内存, jvm, redis集群状态, MySQL集群状态及慢日志, Oracle表空间等预警)
 
 ## 安装(Centos7)
+### 在线
 - 安装Python3环境和开发工具
 ```
 # yum install python3 python3-devel git -y
@@ -30,6 +31,13 @@
 # cd /opt/autocheck
 # pip3 install -r whl/requirements.txt
 ```
+
+### 离线
+- 在相同系统版本上编译python3后安装到服务器上(不同系统方式不同, 需要网上查询), 并配置环境变量
+- 从https://github.com/xhsky/autocheck/archive/master.zip下载autocheck程序, 解压后放到服务器上
+- 切换到服务器上的autocheck程序目录, 执行`# pip3 install -r whl/*.whl ; pip3 install -r whl/*.tar.gz`
+
+
 
 ## 使用
 1. 进入autocheck目录, 并编辑conf/autocheck.conf配置文件以定义巡检项目  

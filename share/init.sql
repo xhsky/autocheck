@@ -1,0 +1,60 @@
+create table if not exists status(section varchar(12) not null, option varchar(24) not null, value varchar(1024) default null, flag tinyint default 0, primary key(section, option));
+insert into status values('autocheck', 'hostname', 'dream', 1);
+insert into status values('host', 'disk_interval', '60', 1);
+insert into status values('host', 'cpu_interval', '30', 1);
+insert into status values('host', 'memory_interval', '30', 1);
+insert into status values('host', 'swap_interval', '360', 1);
+insert into status values('host', 'boot_time_interval', '360', 1);
+insert into status values('logs', 'log_file', './logs/autocheck.log', 1);
+insert into status values('logs', 'log_level', 'info', 1);
+insert into status values('tomcat', 'check', 0, 1);
+insert into status values('tomcat', 'tomcat_interval', "30", 1);
+insert into status values('tomcat', 'tomcat_port', null, 1);
+--insert into status values('tomcat', 'java_home', null, 1);
+--insert into status values('tomcat', 'jstat_duration', null, 1);
+insert into status values('redis', 'check', 0, 1);
+insert into status values('redis', 'redis_interval', '30', 1);
+insert into status values('redis', 'password', null, 1);
+insert into status values('redis', 'hostname', '127.0.0.1', 0);
+insert into status values('redis', 'redis_port', null, 1);
+insert into status values('redis', 'sentinel_port', null, 1);
+insert into status values('redis', 'sentinel_name', null, 1);
+insert into status values('redis', 'commands', null, 1);
+insert into status values('mysql', 'check', 0, 1);
+insert into status values('mysql', 'mysql_interval', '30', 1);
+insert into status values('mysql', 'mysql_user', 'root', 0);
+insert into status values('mysql', 'mysql_ip', '127.0.0.1', 0);
+insert into status values('mysql', 'mysql_port', null, 1);
+insert into status values('mysql', 'mysql_password', null, 1);
+insert into status values('oracle', 'check', 0, 1);
+insert into status values('oracle', 'awr_hours', null, 1);
+insert into status values('backup', 'check', 0, 1);
+insert into status values('backup', 'dir', null, 1);
+insert into status values('backup', 'regular', null, 1);
+insert into status values('mail', 'check', 0, 1);
+insert into status values('mail', 'send_time', null, 1);
+insert into status values('mail', 'sender', null, 1);
+insert into status values('mail', 'receive', null, 1);
+insert into status values('mail', 'subject', null, 1);
+
+--主机资源
+create table if not exists disk(record_time text not null, name varchar(1024), total int, used int, used_percent int, avail int, mounted varchar(521), primary key(record_time, name, mounted));
+create table if not exists cpu(record_time text not null primary key, cpu_count int, cpu_used_percent int);
+create table if not exists memory(record_time text not null primary key, total int, avail int, used int, used_percent int, free int);
+create table if not exists swap(record_time text not null primary key, total int, used int, used_percent int, free int);
+create table if not exists boot_time(record_time text not null primary key, boot_time text);
+
+-- tomcat
+create table if not exists tomcat_constant(record_time text not null, pid int, port int, boot_time text default null, cmdline text default null, primary key(record_time, port));
+create table if not exists tomcat_variable(record_time text not null, pid int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, pid));
+create table if not exists tomcat_jstat8(record_time text not null, pid int, S0 float, S1 float, E float, O float, M float, CCS float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, pid));
+create table if not exists tomcat_jstat7(record_time text not null, pid int, S0 float, S1 float, E float, O float, P float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, pid));
+
+-- redis
+create table if not exists redis_constant(record_time text not null, pid int, port int, boot_time text default null, error_msg text default null,  primary key(record_time, pid));
+create table if not exists redis_variable(record_time text not null, pid int, mem_used float, mem_used_percent float, connections int, threads_num int, primary key(record_time, pid))
+create table if not exists redis_master(record_time text not null, pid int, role varchar(10), connected_slave int, primary key(record_time, pid))
+create table if not exists redis_slaves_info(slave_ip varchar(15) primary key, slave_port int, slave_state varchar(10))
+create table if not exists redis_slave(record_time text not null, pid int, role varchar(10), master_host varchar(15), master_port int, master_link_status varchar(10) primary key(record_time, pid))
+
+
