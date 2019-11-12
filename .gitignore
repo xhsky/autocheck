@@ -5,6 +5,7 @@ __pycache__/
 *.bak
 awr.html
 warning
+*.db
 
 # C extensions
 *.so
