@@ -105,8 +105,8 @@ def stats():
 def record(logger, redis_password, redis_port, sentinel_port, sentinel_name, commands):
     db=database.db()
     normal=1
-    record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.logger.debug("记录Redis资源")
+    record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         conn=Redis(host="127.0.0.1",  port=redis_port, password=redis_password)
         conn.ping()
@@ -140,17 +140,14 @@ def record(logger, redis_password, redis_port, sentinel_port, sentinel_name, com
             if connected_slaves!=0:
                 for i in range(connected_slaves):
                     slave=f"slave{i}"
-                    slaves_list.append((redis_info[slave]['ip'], redis_info[slave]['port'], redis_info[slave]['state']))
-                sql="replace into redis_slaves_info values(?, ?, ?)"
+                    slaves_list.append((record_time, redis_info[slave]['ip'], redis_info[slave]['port'], redis_info[slave]['state']))
+                sql="replace into redis_slaves_info values(?, ?, ?, ?)"
                 db.update_all(sql, slaves_list)
         elif role=="slave":
-            exit()
-            ip=f"{redis_info['master_host']}:{redis_info['master_port']}"
-            printf(f"master信息: ip: {ip}, state: {redis_info['master_link_status']}")
-            analysis(role, ip, redis_info['master_link_status'])
+            sql="replace into redis_slave values(?, ?, ?, ?, ?, ?)"
+            db.update_one(sql, (record_time, pid, role, redis_info['master_host'], redis_info['master_port'], redis_info['master_link_status']))
 
         """显示自定义命令
-        """
         if commands is not None:
             printf("-"*40)
             printf("自定义命令查询:")
@@ -159,6 +156,7 @@ def record(logger, redis_password, redis_port, sentinel_port, sentinel_name, com
                 command=command.strip()
                 result=conn.execute_command(command)
                 printf(f"{command} 结果: {result}")
+        """
 
         conn.close()
     elif normal==0:
@@ -166,26 +164,27 @@ def record(logger, redis_password, redis_port, sentinel_port, sentinel_name, com
         sql="insert into redis_constant(record_time, pid, error_msg) values(?, ?, ?)"
         db.update_one(sql, (record_time, 0, str(msg)))
         
-    """
     # sentinel信息
+    record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if sentinel_port is not None:
-        printf("Sentinel信息:", 2)
+        logger.logger.info(f"记录Redis Sentinel信息...")
         conn=sentinel.Sentinel(
                 [('127.0.0.1', sentinel_port)], 
                 socket_timeout=1
                 )
         try:
+            sentinel_info=[]
             master=conn.discover_master(sentinel_name)
+            sentinel_info.append((record_time, 'master', master[0], master[1]))
             slaves=conn.discover_slaves(sentinel_name)
-            printf(f"master ip: {master[0]}:{master[1]}", 2)
-            if len(slaves)==0:
-                printf(f"slave ip: 无", 2)
-            else:
-                for i in slaves:
-                    printf(f"slave ip: {i[0]}:{i[1]}", 2)
+            for i in slaves:
+                sentinel_info.append((record_time, 'slave', i[0], i[1]))
+            sql="replace into redis_sentinel values(?, ?, ?, ?)"
+            db.update_all(sql, sentinel_info)
         except Exception as e:
-            printf(f"无法获取sentinel信息, 请检查配置文件: {e}", 2)
-    """
+            logger.logger.error(f"Redis Sentinel无法连接...")
+            sql="insert into error values(?, ?, ?, ?, ?)"
+            db.update_one(sql, (record_time, 'Sentinel', "connection", str(e), 0))
         
 if __name__ == "__main__":
     main()
