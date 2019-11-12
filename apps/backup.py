@@ -2,11 +2,13 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import conf
-from lib.printf import printf
-from lib.tools import format_size
-import os, time
+from lib import database
+#from lib.printf import printf
+#from lib.tools import format_size
+#import os, time
+import os, datetime
 
+'''
 def show(backup_dirs_dict):
     for i in backup_dirs_dict:
         printf(f"{i}目录:")
@@ -54,7 +56,7 @@ def collect(backup_dict):
             flag=0
             for j in os.listdir(i):
                 filename=f"{i}/{j}"
-                if  os.path.isfile(filename) and filename.endswith(backup_dict[i]):
+                if os.path.isfile(filename) and filename.endswith(backup_dict[i]):
                     size=os.path.getsize(filename)
                     ctime=os.path.getctime(filename)
                     backup_dir_dict[filename]=(size, ctime)
@@ -63,21 +65,11 @@ def collect(backup_dict):
                 backup_dir_dict=None
         else:
             backup_dir_dict=None
-
         backup_dirs_dict[i]=backup_dir_dict
-
     return backup_dirs_dict
 
 def cat():
-    check, directory, regular=conf.get("backup", 
-            "check", 
-            "dir", 
-            "regular"
-            )
-
     if check=="1":
-        printf("-"*80)
-        printf("备份信息:")
         if directory is not None:
             dir_list=[]
             for i in directory.split(","):
@@ -94,6 +86,30 @@ def cat():
         else:
             printf("[backup]下未定义dir")
         printf("-"*80)
+'''
+
+def record(logger, directory, regular):
+    logger.logger.info(f"记录备份目录{directory}的信息...")
+    record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    backup_info=[]
+    if os.path.exists(directory):
+        flag=0
+        for i in os.listdir(directory):
+            filename=f"{directory}/{i}"
+            if os.path.isfile(filename) and filename.endswith(regular):
+                size=os.path.getsize(filename)
+                ctime=datetime.datetime.fromtimestamp(os.path.getctime(filename)).strftime("%Y-%m-%d %H:%M:%S")
+                backup_info.append((record_time, directory, i, size, ctime))
+                flag=1
+        if flag==0:
+            backup_info.append((record_time, directory, None, None, None))
+    else:
+        backup_info.append((record_time, directory, None, None, None))
+    db=database.db()
+    delete_sql="delete from backup where directory=?"
+    db.update_one(delete_sql, [directory])
+    sql="insert into backup values(?, ?, ?, ?, ?)"
+    db.update_all(sql, backup_info)
 
 if __name__ == "__main__":
     main()

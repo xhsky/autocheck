@@ -31,11 +31,16 @@ insert into status values('oracle', 'awr_hours', null, 1);
 insert into status values('backup', 'check', 0, 1);
 insert into status values('backup', 'dir', null, 1);
 insert into status values('backup', 'regular', null, 1);
+insert into status values('backup', 'cron_time', null, 1);
 insert into status values('mail', 'check', 0, 1);
 insert into status values('mail', 'send_time', null, 1);
 insert into status values('mail', 'sender', null, 1);
 insert into status values('mail', 'receive', null, 1);
 insert into status values('mail', 'subject', null, 1);
+
+-- 报错信息表
+create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time))
+
 
 --主机资源
 create table if not exists disk(record_time text not null, name varchar(1024), total int, used int, used_percent int, avail int, mounted varchar(521), primary key(record_time, name, mounted));
@@ -54,7 +59,14 @@ create table if not exists tomcat_jstat7(record_time text not null, pid int, S0 
 create table if not exists redis_constant(record_time text not null, pid int, port int, boot_time text default null, error_msg text default null,  primary key(record_time, pid));
 create table if not exists redis_variable(record_time text not null, pid int, mem_used float, mem_used_percent float, connections int, threads_num int, primary key(record_time, pid))
 create table if not exists redis_master(record_time text not null, pid int, role varchar(10), connected_slave int, primary key(record_time, pid))
-create table if not exists redis_slaves_info(slave_ip varchar(15) primary key, slave_port int, slave_state varchar(10))
-create table if not exists redis_slave(record_time text not null, pid int, role varchar(10), master_host varchar(15), master_port int, master_link_status varchar(10) primary key(record_time, pid))
+create table if not exists redis_slaves_info(record_time text, slave_ip varchar(15) primary key, slave_port int, slave_state varchar(10))
+create table if not exists redis_slave(record_time text, pid int, role varchar(10), master_host varchar(15), master_port int, master_link_status varchar(10), primary key(pid))
+
+-- sentinel
+create table if not exists redis_sentinel(record_time text, role varchar(10), host varchar(15), port int, primary key(role, host, port))
+
+-- backup
+create table if not exists backup(record_time text, directory varchar(512), filename varchar(512), size float, ctime text, primary key(directory, filename))
+
 
 

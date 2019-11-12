@@ -4,7 +4,7 @@
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from lib import log, conf
-from apps import host, tomcat, redis
+from apps import host, tomcat, redis, backup
 import datetime
 
 def record():
@@ -58,6 +58,39 @@ def record():
         logger.logger.info("开始采集Redis资源信息...")
         scheduler.add_job(redis.record, 'interval', args=[logger, redis_password, redis_port, sentinel_port, sentinel_name, commands], \
                 next_run_time=datetime.datetime.now(), minutes=int(redis_interval), id='redis')
+
+    # backup
+    backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
+            "check", 
+            "dir", 
+            "regular", 
+            "cron_time"
+            )
+    if backup_check=="1":
+        logger.logger.info("开始记录备份信息...")
+        dir_list=[]
+        for i in backup_dir.split(","):
+            dir_list.append(i.strip())
+
+        regular_list=[]
+        for i in backup_regular.split(","):
+            regular_list.append(i.strip())
+
+        cron_time_list=[]
+        for i in backup_cron_time.split(","):
+            cron_time_list.append(i.strip())
+
+        for i in range(len(dir_list)):
+            directory=dir_list[i]
+            regular=regular_list[i]
+            cron_time=cron_time_list[i].split(":")
+            hour=cron_time[0].strip()
+            minute=cron_time[1].strip()
+            scheduler.add_job(backup.record, 'cron', args=[logger, directory, regular], day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
+
+    # 记录mysql
+
+
 
 
 
