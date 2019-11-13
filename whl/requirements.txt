@@ -1,4 +1,11 @@
+APScheduler==3.6.1
 configparser==4.0.2
+gevent==1.4.0
+greenlet==0.4.15
+prettytable==0.7.2
 psutil==5.6.3
 PyMySQL==0.9.3
-redis==3.3.8
+pytz==2019.3
+redis==3.3.10
+six==1.12.0
+tzlocal==2.0.0
