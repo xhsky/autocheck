@@ -147,6 +147,7 @@ def record(logger, tomcat_port_and_pid):
         logger.logger.debug(f"记录Tomcat({port})资源")
 
         if pid==0:
+            logger.logger.error(f"Tomcat({port})未运行")
             tomcat_create_time="0"
             sql="select boot_time from tomcat_constant where port=? and pid=? order by record_time desc limit 1"
             boottime_in_db=db.query_one(sql, (port, pid))
