@@ -135,6 +135,7 @@ def get_pid():
 def init():
     """数据初始化
     """
+    os.makedirs("./data", exist_ok=True)
     data_file='data/auto.db'
     data_init_file='share/init.sql'
     if os.path.exists(data_file):

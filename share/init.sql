@@ -39,7 +39,7 @@ insert into status values('mail', 'receive', null, 1);
 insert into status values('mail', 'subject', null, 1);
 
 -- 报错信息表
-create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time))
+create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time, section))
 
 
 --主机资源
@@ -68,5 +68,8 @@ create table if not exists redis_sentinel(record_time text, role varchar(10), ho
 -- backup
 create table if not exists backup(record_time text, directory varchar(512), filename varchar(512), size float, ctime text, primary key(directory, filename))
 
+-- mysql
+create table if not exists mysql_constant(record_time text not null, pid int, port int, boot_time text default null, primary key(record_time, pid));
+create table if not exists mysql_variable(record_time text not null, pid int, mem_used float, mem_used_percent float, connections int, threads_num int, primary key(record_time, pid))
 
 
