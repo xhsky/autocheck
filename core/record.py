@@ -24,13 +24,9 @@ def record():
             "boot_time_interval"
             )
     scheduler.add_job(host.disk_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(disk_interval), id='disk')
-    time.sleep(2)
     scheduler.add_job(host.cpu_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(cpu_interval), id='cpu')
-    time.sleep(2)
     scheduler.add_job(host.memory_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(memory_interval), id='memory')
-    time.sleep(2)
     scheduler.add_job(host.swap_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(swap_interval), id='swap')
-    time.sleep(2)
     scheduler.add_job(host.boot_time_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(boot_time_interval), id='boot_time')
 
     # tomcat资源
@@ -40,7 +36,6 @@ def record():
             "tomcat_port", 
             )
     if tomcat_check=='1':
-        time.sleep(2)
         logger.logger.info("开始采集Tomcat资源信息...")
         tomcat_port_list=[]                                                 # 将tomcat_port参数改为列表
         for i in tomcat_port.split(","):
@@ -60,11 +55,9 @@ def record():
            "commands"
            )
     if redis_check=="1":
-        time.sleep(2)
         logger.logger.info("开始采集Redis资源信息...")
         scheduler.add_job(redis.record, 'interval', args=[logger, redis_password, redis_port, sentinel_port, sentinel_name, commands], \
                 next_run_time=datetime.datetime.now(), minutes=int(redis_interval), id='redis')
-    time.sleep(2)
 
     # backup
     backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
@@ -74,7 +67,6 @@ def record():
             "cron_time"
             )
     if backup_check=="1":
-        time.sleep(2)
         logger.logger.info("开始记录备份信息...")
         dir_list=[]
         for i in backup_dir.split(","):
@@ -106,13 +98,8 @@ def record():
             "mysql_password"
             )
     if mysql_check=="1":
-        time.sleep(2)
         logger.logger.info("开始采集MySQL资源信息...")
         scheduler.add_job(mysql.record, 'interval', args=[logger, mysql_user, mysql_ip, mysql_password, mysql_port], next_run_time=datetime.datetime.now(), minutes=int(mysql_interval), id='mysql')
-
-
-
-
 
     scheduler.start()
     

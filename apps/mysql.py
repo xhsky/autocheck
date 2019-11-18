@@ -271,12 +271,13 @@ def record(logger, mysql_user, mysql_ip, mysql_password, mysql_port):
                         slave_sql_state=i[44]
                         master_uuid=i[40]
                         retrieved_gtid_set=i[51]
-                        executed_gtid_set=i[52]
+                        #executed_gtid_set=i[52]
+                        executed_gtid_set=i[52].replace('\n', ' ', -1)
                         seconds_behind_master=i[32]
                         slave_list.append((record_time, pid, role, master_host, master_port, replicate_do_db, replicate_ignore_db, \
                                 slave_io_thread, slave_io_state, slave_sql_thread, slave_sql_state, \
                                 master_uuid, retrieved_gtid_set, executed_gtid_set, seconds_behind_master))
-                    sql='insert into master_slave values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    sql='insert into mysql_slave values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                     db.update_all(sql, slave_list)
                 '''
                 # 获取慢日志

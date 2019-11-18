@@ -59,7 +59,8 @@ def config_to_db():
     db.close()
 
 def main():
-    check_item=[record, show, analysis]
+    record()
+    check_item=[show, analysis]
     gevent_list=[]
     for i in check_item:
         g=gevent.spawn(i, )
