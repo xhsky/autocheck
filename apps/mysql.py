@@ -235,6 +235,49 @@ def record(logger, mysql_user, mysql_ip, mysql_password, mysql_port):
                 sql="insert into mysql_variable values(?, ?, ?, ?, ?, ?)"
                 db.update_one(sql, (record_time, pid, mysql_memory, mysql_memory_percent, mysql_connected_num, mysql_num_threads))
 
+                # 判断主从状态
+                logger.logger.debug("记录MySQL集群信息...")
+                sql='show slave status'
+                cursor.execute(sql)
+                slave_status=cursor.fetchall()
+
+                record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                if len(slave_status)==0:            # master信息
+                    role="master"
+                    sql='show slave hosts'
+                    cursor.execute(sql)
+                    slave_num=len(cursor.fetchall())
+
+                    sql='show master status'
+                    cursor.execute(sql)
+                    master_data=cursor.fetchone()
+                    binlog_do_db=master_data[2]
+                    binlog_ignore_db=master_data[3]
+
+                    sql='replace into mysql_master values(?, ?, ?, ?, ?, ?)'
+                    db.update_one(sql, (record_time, pid, role, slave_num, binlog_do_db, binlog_ignore_db))
+
+                else:                               # slave信息
+                    role="slave"
+                    slave_list=[]
+                    for i in slave_status:
+                        master_host=i[1]
+                        master_port=i[3]
+                        replicate_do_db=i[12]
+                        replicate_ignore_db=i[13]
+                        slave_io_thread=i[10]
+                        slave_io_state=i[0]
+                        slave_sql_thread=i[11]
+                        slave_sql_state=i[44]
+                        master_uuid=i[40]
+                        retrieved_gtid_set=i[51]
+                        executed_gtid_set=i[52]
+                        seconds_behind_master=i[32]
+                        slave_list.append((record_time, pid, role, master_host, master_port, replicate_do_db, replicate_ignore_db, \
+                                slave_io_thread, slave_io_state, slave_sql_thread, slave_sql_state, \
+                                master_uuid, retrieved_gtid_set, executed_gtid_set, seconds_behind_master))
+                    sql='insert into master_slave values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    db.update_all(sql, slave_list)
                 '''
                 # 获取慢日志
                 printf("-"*40)
@@ -269,56 +312,6 @@ def record(logger, mysql_user, mysql_ip, mysql_password, mysql_port):
                         printf(f"MySQL参数log_output未定义为file, 无法分析慢日志")
                 printf("-"*40)
 
-                # 判断主从状态
-                printf("主从信息:")
-                sql='show slave status'
-                cursor.execute(sql)
-                slave_status=cursor.fetchall()
-
-                if len(slave_status)==0:            # master信息
-                    role="master"
-                    sql='show slave hosts'
-                    cursor.execute(sql)
-                    slave_num=len(cursor.fetchall())
-
-                    printf(f"角色: {role}")
-                    printf(f"slave数量: {slave_num}")
-                else:                               # slave信息
-                    role="slave"
-                    for i in slave_status:
-                        master_host=i[1]
-                        master_port=i[3]
-                        replicate_do_db=i[12]
-                        slave_io_thread=i[10]
-                        slave_io_state=i[0]
-                        slave_sql_thread=i[11]
-                        slave_sql_state=i[44]
-                        master_uuid=i[40]
-                        retrieved_gtid_set=i[51]
-                        executed_gtid_set=i[52]
-                        seconds_behind_master=i[32]
-
-                        printf(f"角色: {role}")
-                        if slave_io_thread.lower()=="no" and slave_sql_thread.lower()=="no":
-                            printf("数据库同步已关闭", 2)
-                        else:
-                            printf(f"Master IP: {master_host}:{master_port}")
-                            printf(f"同步的数据库: {replicate_do_db}")
-                            printf(f"Slave IO线程是否开启: {slave_io_thread}")
-                            printf(f"Slave IO线程状态: {slave_io_state}")
-                            printf(f"Slave SQL线程是否开启: {slave_sql_thread}")
-                            printf(f"Slave SQL线程状态: {slave_sql_state}")
-                            printf(f"Master UUID: {master_uuid}")
-                            printf(f"已接收的GTID集合: {retrieved_gtid_set}")
-                            executed_gtid_set=executed_gtid_set.replace('\n', ' ', -1)
-                            printf(f"已执行的GTID集合: {executed_gtid_set}")
-                            printf(f"Slave落后Master的时间(秒): {seconds_behind_master}")
-
-                            if slave_io_thread.lower()=="yes" and slave_sql_thread.lower()=="yes":
-                                printf("数据库同步状态正常", 1)
-                            else:
-                                printf("数据库同步状态不正常", 1)
-                            printf("-"*40)
                 '''
     except Exception as e:
         logger.logger.error(f"无法连接数据库: {e}")
