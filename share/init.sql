@@ -71,5 +71,8 @@ create table if not exists backup(record_time text, directory varchar(512), file
 -- mysql
 create table if not exists mysql_constant(record_time text not null, pid int, port int, boot_time text default null, primary key(record_time, pid));
 create table if not exists mysql_variable(record_time text not null, pid int, mem_used float, mem_used_percent float, connections int, threads_num int, primary key(record_time, pid))
+create table if not exists mysql_master(record_time text not null, pid int, role varchar(10), slave_num int, binlog_do_db varchar(1024), binlog_ignore_db varchar(1024), primary key(pid, role))
+create table if not exists mysql_slave(record_time text not null, pid int, role varchar(10), master_host varchar(15), master_port int, replicate_do_db varchar(1024), replicate_ignore_db varchar(1024), slave_io_thread text, slave_io_state text, slave_sql_thread text, slave_sql_state text, master_uuid varchar(64), retrieved_gtid_set text, executed_gtid_set text, seconds_behind_master int, primary key(record_time, pid, master_host))
+
 
 
