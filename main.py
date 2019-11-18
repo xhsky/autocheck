@@ -162,6 +162,7 @@ if __name__ == "__main__":
 
     cfg=configparser.ConfigParser()
     cfg.read("./conf/autocheck.conf")
+    os.makedirs("./logs", exist_ok=True)
     log_file=get_config(cfg, "logs", "log_file")
     log_level=get_config(cfg, "logs", "log_level")
     try:
