@@ -27,6 +27,7 @@ insert into status values('mysql', 'mysql_ip', '127.0.0.1', 0);
 insert into status values('mysql', 'mysql_port', null, 1);
 insert into status values('mysql', 'mysql_password', null, 1);
 insert into status values('oracle', 'check', 0, 1);
+insert into status values('oracle', 'oracle_interval', 1, 1);
 insert into status values('oracle', 'awr_hours', null, 1);
 insert into status values('backup', 'check', 0, 1);
 insert into status values('backup', 'dir', null, 1);
@@ -40,7 +41,6 @@ insert into status values('mail', 'subject', null, 1);
 
 -- 报错信息表
 create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time, section))
-
 
 --主机资源
 create table if not exists disk(record_time text not null, name varchar(1024), total int, used int, used_percent int, avail int, mounted varchar(521), primary key(record_time, name, mounted));
@@ -73,6 +73,9 @@ create table if not exists mysql_constant(record_time text not null, pid int, po
 create table if not exists mysql_variable(record_time text not null, pid int, mem_used float, mem_used_percent float, connections int, threads_num int, primary key(record_time, pid))
 create table if not exists mysql_master(record_time text not null, pid int, role varchar(10), slave_num int, binlog_do_db varchar(1024), binlog_ignore_db varchar(1024), primary key(pid, role))
 create table if not exists mysql_slave(record_time text not null, pid int, role varchar(10), master_host varchar(15), master_port int, replicate_do_db varchar(1024), replicate_ignore_db varchar(1024), slave_io_thread text, slave_io_state text, slave_sql_thread text, slave_sql_state text, master_uuid varchar(64), retrieved_gtid_set text, executed_gtid_set text, seconds_behind_master int, primary key(record_time, pid, master_host))
+
+-- oracle
+create table if not exists oracle(record_time text not null, tablespace_name, size float, used float, used_percent float, free float, primary key(record_time, tablespace_name))
 
 
 
