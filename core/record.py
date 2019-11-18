@@ -4,7 +4,7 @@
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from lib import log, conf
-from apps import host, tomcat, redis, backup, mysql
+from apps import host, tomcat, redis, backup, mysql, oracle
 import datetime, time
 
 def record():
@@ -100,6 +100,15 @@ def record():
     if mysql_check=="1":
         logger.logger.info("开始采集MySQL资源信息...")
         scheduler.add_job(mysql.record, 'interval', args=[logger, mysql_user, mysql_ip, mysql_password, mysql_port], next_run_time=datetime.datetime.now(), minutes=int(mysql_interval), id='mysql')
+
+    # 记录Oracle
+    oracle_check, oracle_interval=conf.get("oracle", 
+            "check", 
+            "oracle_interval"
+            )
+    if oracle_check=="1":
+        logger.logger.info("开始记录Oracle信息...")
+        scheduler.add_job(oracle.record, 'interval', args=[logger], next_run_time=datetime.datetime.now(), minutes=int(oracle_interval), id='oracle')
 
     scheduler.start()
     
