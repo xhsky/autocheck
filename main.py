@@ -7,7 +7,7 @@
 #import os, datetime, tarfile, sys
 #import socket, shutil
 
-from core import record as rec
+from core import record as rec, analysis as ana
 from lib import database, log
 import os, sys
 import gevent                                                                                                                                                                 
@@ -21,7 +21,7 @@ def show():
     pass
 
 def analysis():
-    pass
+    ana.analysis()
 
 def get_config(cfg, section, option):
     """读取配置文件, 返回value
@@ -59,8 +59,8 @@ def config_to_db():
     db.close()
 
 def main():
-    record()
-    check_item=[show, analysis]
+    #record()
+    check_item=[record, show, analysis]
     gevent_list=[]
     for i in check_item:
         g=gevent.spawn(i, )
