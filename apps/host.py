@@ -7,7 +7,7 @@
 
 #from apscheduler.schedulers.blocking import BlockingScheduler
 #from lib import log, database
-from lib import database
+from lib import database, mail
 import datetime
 import psutil
 
@@ -31,6 +31,30 @@ def disk_record(logger):
     sql="insert into disk values(?, ?, ?, ?, ?, ?, ?)"
     db.update_all(sql, disk_list)
 
+def disk_analysis(logger, warning_percent, warning_interval, sender_alias, receive, subject):
+    db=database.db()
+    sql=f"select record_time, name, used_percent, mounted from disk where record_time=(select max(record_time) from disk)"
+    data=db.query_all(sql)
+
+    logger.logger.debug("分析disk...")
+    send_flag=0                 # 是否有预警信息
+    warning_msg="磁盘预警:\n"
+    for i in data:
+        if i[2] > warning_percent:
+            send_flag=1
+            msg=f"{i[3]}目录({i[1]})已使用{i[2]}%\n"
+            warning_msg=f"{warning_msg}{msg}"
+    if send_flag==1:
+        record_time=datetime.datetime.strptime(data[0][0], "%Y-%m-%d %H:%M:%S")
+        sql="select max(time) from warning_record where section='host' and value='disk'"
+        warning_time=db.query_one(sql)[0]
+        if warning_time is None or record_time > datetime.datetime.strptime(warning_time, "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
+            logger.logger.debug("写入Disk预警信息")
+            sql="insert into warning_record values(?, ?, ?)"
+            db.update_one(sql, (record_time, "host", "disk"))
+            mail.send(logger, warning_msg, sender_alias, receive, subject, msg='disk')
+
+'''
 def disk():
     all_disk=psutil.disk_partitions()
 
@@ -63,6 +87,7 @@ def disk():
 
     if normal==0:
         printf("磁盘空间正常.", 1)
+'''
 
 def cpu_record(logger):
     db=database.db()
@@ -71,8 +96,26 @@ def cpu_record(logger):
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cpu_count=psutil.cpu_count()
     cpu_used_percent=psutil.cpu_percent(interval=5)
-    
     db.update_one(sql, (record_time, cpu_count, cpu_used_percent))
+
+def cpu_analysis(logger, warning_percent, warning_interval, sender_alias, receive, subject):
+    db=database.db()
+    sql="select record_time, cpu_used_percent from cpu order by record_time desc"
+    data=db.query_one(sql)
+    cpu_used_percent=float(data[1])
+
+    logger.logger.debug("分析CPU...")
+    if cpu_used_percent > warning_percent:
+        warning_msg=f"CPU预警:\nCPU使用率当前已达到{cpu_used_percent}%"
+
+        record_time=datetime.datetime.strptime(data[0], "%Y-%m-%d %H:%M:%S")
+        sql="select max(time) from warning_record where section='host' and value='cpu'"
+        warning_time=db.query_one(sql)[0]
+        if warning_time is None or record_time > datetime.datetime.strptime(warning_time, "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
+            logger.logger.debug("写入CPU预警信息")
+            sql="insert into warning_record values(?, ?, ?)"
+            db.update_one(sql, (record_time, "host", "cpu"))
+            mail.send(logger, warning_msg, sender_alias, receive, subject, msg='cpu')
 
 def memory_record(logger):
     db=database.db()
@@ -85,6 +128,26 @@ def memory_record(logger):
 
     db.update_one(sql, (record_time, total, avail, used, used_percent, free))
 
+def memory_analysis(logger, warning_percent, warning_interval, sender_alias, receive, subject):
+    db=database.db()
+    sql="select record_time, used_percent from memory order by record_time desc"
+    data=db.query_one(sql)
+    mem_used_percent=float(data[1])
+
+    logger.logger.debug("分析Mem...")
+    if mem_used_percent > warning_percent:
+        warning_msg=f"内存预警:\n内存使用率当前已达到{mem_used_percent}%"
+
+        record_time=datetime.datetime.strptime(data[0], "%Y-%m-%d %H:%M:%S")
+        sql="select max(time) from warning_record where section='host' and value='mem'"
+        warning_time=db.query_one(sql)[0]
+        if warning_time is None or record_time > datetime.datetime.strptime(warning_time, "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
+            logger.logger.debug("写入Mem预警信息")
+            sql="insert into warning_record values(?, ?, ?)"
+            db.update_one(sql, (record_time, "host", "mem"))
+            mail.send(logger, warning_msg, sender_alias, receive, subject, msg='mem')
+
+'''
 def memory():
     printf("内存信息:")
     mem=psutil.virtual_memory()
@@ -104,6 +167,7 @@ def memory():
     normal=0
     if normal==0:
         printf("内存空间正常.", 1)
+'''
 
 def swap_record(logger):
     db=database.db()
@@ -127,25 +191,6 @@ def boot_time_record(logger):
     if data is None or data[0]!=boot_time:
         sql="insert into boot_time values(?, ?)"
         db.update_one(sql, (record_time, boot_time))
-
-"""
-def do_job():
-    log_file, log_level=log.get_log_args()
-    logger=log.Logger(log_file, log_level)
-
-    logger.logger.info("开始采集资源信息...")
-    try:
-        scheduler=BlockingScheduler()
-        scheduler.add_job(disk_record, 'interval', args=[logger], minutes=1, id='disk')
-        scheduler.add_job(cpu_record, 'interval', args=[logger], minutes=2, id='cpu')
-        scheduler.add_job(memory_record, 'interval', args=[logger], minutes=1, id='memory')
-        scheduler.add_job(swap_record, 'interval', args=[logger], minutes=1, id='swap')
-        scheduler.add_job(boot_time_record, 'interval', args=[logger], minutes=1, id='boot_time')
-        scheduler.start()
-    except Exception as e:
-        logger.logger.error(e)
-"""
-
     
 if __name__ == "__main__":
     info()

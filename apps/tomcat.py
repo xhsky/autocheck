@@ -74,6 +74,7 @@ def analysis(message):
     else:
         printf(f"FGC回收正常({fgc_max_time:.2f}秒).", 1)
     
+'''
 def stats():
     check, tomcat_port, java_home, jstat_duration=conf.get("tomcat",
             "check",
@@ -130,6 +131,7 @@ def stats():
 
             printf("-"*40)
         printf("-"*80)
+'''
 
 def record(logger, tomcat_port_and_pid):
     """
