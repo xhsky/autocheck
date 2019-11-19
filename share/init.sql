@@ -1,5 +1,7 @@
 create table if not exists status(section varchar(12) not null, option varchar(24) not null, value varchar(1024) default null, flag tinyint default 0, primary key(section, option));
 insert into status values('autocheck', 'hostname', 'dream', 1);
+insert into status values('autocheck', 'warning_percent', '95', 1);
+insert into status values('autocheck', 'warning_interval', '30', 1);
 insert into status values('host', 'disk_interval', '60', 1);
 insert into status values('host', 'cpu_interval', '30', 1);
 insert into status values('host', 'memory_interval', '30', 1);
@@ -33,7 +35,7 @@ insert into status values('backup', 'check', 0, 1);
 insert into status values('backup', 'dir', null, 1);
 insert into status values('backup', 'regular', null, 1);
 insert into status values('backup', 'cron_time', null, 1);
-insert into status values('mail', 'check', 0, 1);
+--insert into status values('mail', 'check', 0, 1);
 insert into status values('mail', 'send_time', null, 1);
 insert into status values('mail', 'sender', null, 1);
 insert into status values('mail', 'receive', null, 1);
@@ -41,6 +43,7 @@ insert into status values('mail', 'subject', null, 1);
 
 -- 报错信息表
 create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time, section))
+create table if not exists warning_record(time text not null, section varchar(1024), value varchar(1024))
 
 --主机资源
 create table if not exists disk(record_time text not null, name varchar(1024), total int, used int, used_percent int, avail int, mounted varchar(521), primary key(record_time, name, mounted));
@@ -76,6 +79,10 @@ create table if not exists mysql_slave(record_time text not null, pid int, role 
 
 -- oracle
 create table if not exists oracle(record_time text not null, tablespace_name, size float, used float, used_percent float, free float, primary key(record_time, tablespace_name))
+
+-- mail
+create table if not exists mail(record_time text not null, sender, receive, msg, primary key(record_time, msg))
+
 
 
 
