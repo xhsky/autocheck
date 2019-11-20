@@ -133,15 +133,10 @@ def stats():
         printf("-"*80)
 '''
 
-def record(logger, tomcat_port_and_pid):
-    """
-    tomcat_port_list=[]                          # 将tomcat_port参数改为列表
-    for i in tomcat_port.split(","):        
-        tomcat_port_list.append(i.strip())
-    tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)            # 获取Tomcat端口与pid对应的字典
-    """
-
+def record(logger, tomcat_port_list):
     db=database.db()
+    tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)       # 获取Tomcat端口与pid对应的字典
+    #logger.logger.debug(f"Tomcat Port and Pid: {tomcat_port_and_pid}")
     for i in tomcat_port_and_pid:                # 根据pid获取相应信息
         record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         pid=tomcat_port_and_pid[i]
@@ -177,7 +172,7 @@ def record(logger, tomcat_port_and_pid):
 
 
             # 内存回收
-            logger.logger.debug(f"记录Tomcat({port}) Jvm信息")
+            logger.logger.debug(f"记录Tomcat({port})Jvm信息")
             cmd=f"jstat -gcutil {pid}"
             (status, message)=subprocess.getstatusoutput(cmd)
             message=message.splitlines()
