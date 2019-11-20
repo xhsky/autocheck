@@ -12,6 +12,8 @@ insert into status values('logs', 'log_level', 'info', 1);
 insert into status values('tomcat', 'check', 0, 1);
 insert into status values('tomcat', 'tomcat_interval', "30", 1);
 insert into status values('tomcat', 'tomcat_port', null, 1);
+--insert into status values('tomcat', 'ygc_time', 1, 0);
+--insert into status values('tomcat', 'fgc_time', 10, 0);
 --insert into status values('tomcat', 'java_home', null, 1);
 --insert into status values('tomcat', 'jstat_duration', null, 1);
 insert into status values('redis', 'check', 0, 1);
@@ -43,7 +45,7 @@ insert into status values('mail', 'subject', null, 1);
 
 -- 报错信息表
 create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time, section))
-create table if not exists warning_record(time text not null, section varchar(1024), value varchar(1024))
+create table if not exists warning_record(record_time text not null, section varchar(1024), value varchar(1024), debug boolean)
 
 --主机资源
 create table if not exists disk(record_time text not null, name varchar(1024), total int, used int, used_percent int, avail int, mounted varchar(521), primary key(record_time, name, mounted));
@@ -55,9 +57,10 @@ create table if not exists boot_time(record_time text not null primary key, boot
 -- tomcat
 create table if not exists tomcat_constant(record_time text not null, pid int, port int, boot_time text default null, cmdline text default null, primary key(record_time, port));
 create table if not exists tomcat_variable(record_time text not null, pid int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, pid));
-create table if not exists tomcat_jstat8(record_time text not null, pid int, S0 float, S1 float, E float, O float, M float, CCS float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, pid));
-create table if not exists tomcat_jstat7(record_time text not null, pid int, S0 float, S1 float, E float, O float, P float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, pid));
-create table if not exists tomcat_java_version(record_time text not null primary key, version int);
+create table if not exists tomcat_jstat8(record_time text not null, port int, S0 float, S1 float, E float, O float, M float, CCS float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, port));
+create table if not exists tomcat_jstat7(record_time text not null, port int, S0 float, S1 float, E float, O float, P float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, port));
+create table if not exists tomcat_java_version(version int);
+insert into tomcat_java_version values(8);
 
 -- redis
 create table if not exists redis_constant(record_time text not null, pid int, port int, boot_time text default null, error_msg text default null,  primary key(record_time, pid));
