@@ -180,9 +180,16 @@ def record(logger, tomcat_port_list):
             if len(header)==11:             # jdk8
                 fields=["S0", "S1", "E", "O", "M", "CCS", "YGC", "YGCT", "FGC", "FGCT", "GCT", "record_time", "pid"]
                 sql=f"insert into tomcat_jstat8({','.join(fields)}) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                java_version_sql="replace into tomcat_java_version values(?, ?)"
+                java_version=8
             else:                           # jdk7
                 fields=["S0", "S1", "E", "O", "P", "YGC", "YGCT", "FGC", "FGCT", "GCT", "record_time", "pid"]
                 sql=f"insert into tomcat_jstat7({','.join(fields)}) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                java_version_sql="replace into tomcat_java_version values(?, ?)"
+                java_version=7
+
+            db.update_one(java_version_sql, (record_time, java_version))        # 将java的版本写入数据库
+            logger.logger.debug(f"java version: {java_version}")
 
             data_index_list=[]                      # 按照fields的顺序从header中获取字段索引 
             for i in fields[:-2]:

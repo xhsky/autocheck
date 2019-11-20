@@ -57,6 +57,7 @@ create table if not exists tomcat_constant(record_time text not null, pid int, p
 create table if not exists tomcat_variable(record_time text not null, pid int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, pid));
 create table if not exists tomcat_jstat8(record_time text not null, pid int, S0 float, S1 float, E float, O float, M float, CCS float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, pid));
 create table if not exists tomcat_jstat7(record_time text not null, pid int, S0 float, S1 float, E float, O float, P float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, pid));
+create table if not exists tomcat_java_version(record_time text not null primary key, version int);
 
 -- redis
 create table if not exists redis_constant(record_time text not null, pid int, port int, boot_time text default null, error_msg text default null,  primary key(record_time, pid));
