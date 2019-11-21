@@ -40,22 +40,13 @@ def analysis():
         scheduler.add_job(tomcat.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='tomcat_run_ana')
         scheduler.add_job(tomcat.jvm_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='tomcat_jvm_ana')
 
-    '''
     # redis资源
-    redis_check, redis_interval, redis_password, redis_port, sentinel_port, sentinel_name, commands=conf.get("redis", 
-           "check",
-           "redis_interval", 
-           "password",
-           "redis_port",
-           "sentinel_port",
-           "sentinel_name",
-           "commands"
-           )
+    redis_check=conf.get("redis", "check")[0]
     if redis_check=="1":
-        logger.logger.info("开始采集Redis资源信息...")
-        scheduler.add_job(redis.record, 'interval', args=[logger, redis_password, redis_port, sentinel_port, sentinel_name, commands], \
-                next_run_time=datetime.datetime.now(), minutes=int(redis_interval), id='redis')
+        logger.logger.info("开始分析Redis资源信息...")
+        scheduler.add_job(redis.analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_ana')
 
+    '''
     # backup
     backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
             "check", 

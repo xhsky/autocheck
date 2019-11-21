@@ -68,6 +68,8 @@ create table if not exists redis_variable(record_time text not null, pid int, me
 create table if not exists redis_master(record_time text not null, pid int, role varchar(10), connected_slave int, primary key(record_time, pid))
 create table if not exists redis_slaves_info(record_time text, slave_ip varchar(15) primary key, slave_port int, slave_state varchar(10))
 create table if not exists redis_slave(record_time text, pid int, role varchar(10), master_host varchar(15), master_port int, master_link_status varchar(10), primary key(pid))
+create table if not exists redis_role(record_time text, role varchar(12));
+insert into redis_role values("Null", "master");
 
 -- sentinel
 create table if not exists redis_sentinel(record_time text, role varchar(10), host varchar(15), port int, primary key(role, host, port))
