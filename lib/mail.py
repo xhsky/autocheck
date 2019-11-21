@@ -9,11 +9,13 @@ from email.mime.application import MIMEApplication
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
-from lib import database
+from lib import database, conf
 import datetime
 #import subprocess
 
 def send(logger, mail_body, sender_alias, receive, subject, msg=None, attachment_file=None):
+    db=database.db()
+    hostname=conf.get("autocheck", "hostname")[0]
     try:
         """网易企业邮箱, 巨坑....
         1.授权码必须手动指定, 不能自动生成
@@ -48,6 +50,7 @@ def send(logger, mail_body, sender_alias, receive, subject, msg=None, attachment
         #status, top_msg=subprocess.getstatusoutput(cmd)
         #mail_body=f"主机负载简图:\n{top_msg}\n\n\n{'*'*80}\n\n\n{mail_body}"
 
+        mail_body=f"主机: {hostname}\n{mail_body}"
         message.attach(MIMEText(mail_body, "plain", "utf-8"))
 
         #all_file=os.listdir(".")    # 获取附件文件名称
@@ -80,7 +83,6 @@ def send(logger, mail_body, sender_alias, receive, subject, msg=None, attachment
         msg="发送失败"
         
     record_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    db=database.db()
     sql="insert into mail values(?, ?, ?, ?)"
     db.update_one(sql, (record_time, sender_alias, receive, msg))
 
