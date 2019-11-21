@@ -45,17 +45,11 @@ def analysis():
         scheduler.add_job(redis.analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_ana')
 
     # 记录mysql
-    mysql_check, mysql_interval, mysql_user, mysql_ip, mysql_port, mysql_password=conf.get("mysql", 
-            "check", 
-            "mysql_interval", 
-            "mysql_user", 
-            "mysql_ip", 
-            "mysql_port", 
-            "mysql_password"
-            )
-    if mysql_check=="0":
-        logger.logger.info("开始采集MySQL资源信息...")
-        scheduler.add_job(mysql.record, 'interval', args=[log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port], next_run_time=datetime.datetime.now(), minutes=int(mysql_interval), id='mysql')
+    mysql_check, seconds_behind_master=conf.get("mysql", "check", "seconds_behind_master")
+    if mysql_check=="1":
+        logger.logger.info("开始分析MySQL资源信息...")
+        scheduler.add_job(mysql.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_run_ana')
+        scheduler.add_job(mysql.master_slave_analysis, 'interval', args=[log_file, log_level, int(seconds_behind_master), warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_slave_ana')
 
     '''
     # backup

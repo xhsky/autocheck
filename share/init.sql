@@ -30,6 +30,7 @@ insert into status values('mysql', 'mysql_user', 'root', 0);
 insert into status values('mysql', 'mysql_ip', '127.0.0.1', 0);
 insert into status values('mysql', 'mysql_port', null, 1);
 insert into status values('mysql', 'mysql_password', null, 1);
+insert into status values('mysql', 'seconds_behind_master', 5, 1);
 insert into status values('oracle', 'check', 0, 1);
 insert into status values('oracle', 'oracle_interval', 1, 1);
 insert into status values('oracle', 'awr_hours', null, 1);
