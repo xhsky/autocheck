@@ -4,7 +4,7 @@
 
 #from lib.printf import printf
 #from lib import conf, tools
-from lib import database, mail, log
+from lib import database, mail, log, warning
 import psutil
 import datetime
 import subprocess
@@ -28,6 +28,7 @@ def jstat(pid):
     (status, message)=subprocess.getstatusoutput(cmd)
     return message
 
+'''
 def analysis(logger, db, flag, section, value, warning_interval):
     warning_flag=0
     record_time_now=datetime.datetime.now()
@@ -74,6 +75,7 @@ def analysis1(logger, db, port, pid, warning_interval):
             sql="update warning_record set debug=1 where section=? and value=?"
             db.update_one(sql, (port, "running"))
     return warning_msg
+'''
 
 def running_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
     logger=log.Logger(log_file, log_level)
@@ -89,7 +91,7 @@ def running_analysis(log_file, log_level, warning_interval, sender_alias, receiv
         flag=0
         if i[1] == 0:
             flag=1
-        warning_flag=analysis(logger, db, flag, i[0], "running", warning_interval)
+        warning_flag=warning.warning(logger, db, flag, i[0], "running", warning_interval)
         if warning_flag:
             warning_msg=f"Tomcat预警:\nTomcat({i[0]})未运行\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{i[0]}_running')
@@ -126,7 +128,7 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
         if ygc_time >= ygc_warning_time:
             ygc_flag=1
             logger.logger.warning(f"Tomcat({port})的YGC平均时间: {ygc_time}")
-        warning_flag=analysis(logger, db, ygc_flag, port, "ygc", warning_interval)
+        warning_flag=warning.warning(logger, db, ygc_flag, port, "ygc", warning_interval)
         if warning_flag:
             warning_msg=f"Tomcat预警:\nTomcat({port})YGC平均时间为{ygc_time}\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{port}_ygc')
@@ -135,7 +137,7 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
         if fgc_time >= fgc_warning_time:
             fgc_flag=1
             logger.logger.warning(f"Tomcat({port})的FGC平均时间: {fgc_time}")
-        warning_flag=analysis(logger, db, fgc_flag, port, "fgc", warning_interval)
+        warning_flag=warning.warning(logger, db, fgc_flag, port, "fgc", warning_interval)
         if warning_flag:
             warning_msg=f"Tomcat预警:\nTomcat({port})FGC平均时间为{fgc_time}\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{port}_fgc')
