@@ -51,6 +51,11 @@ def analysis():
         scheduler.add_job(mysql.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_run_ana')
         scheduler.add_job(mysql.master_slave_analysis, 'interval', args=[log_file, log_level, int(seconds_behind_master), warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_slave_ana')
 
+    # 记录Oracle
+    oracle_check=conf.get("oracle", "check")[0]
+    if oracle_check=="1":
+        logger.logger.info("开始分析Oracle信息...")
+        scheduler.add_job(oracle.tablespace_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=31, id='oracle_tablespace_ana')
     '''
     # backup
     backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
@@ -82,14 +87,6 @@ def analysis():
             scheduler.add_job(backup.record, 'cron', args=[logger, directory, regular], day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
 
 
-    # 记录Oracle
-    oracle_check, oracle_interval=conf.get("oracle", 
-            "check", 
-            "oracle_interval"
-            )
-    if oracle_check=="1":
-        logger.logger.info("开始记录Oracle信息...")
-        scheduler.add_job(oracle.record, 'interval', args=[logger], next_run_time=datetime.datetime.now(), minutes=int(oracle_interval), id='oracle')
 
     '''
     scheduler.start()

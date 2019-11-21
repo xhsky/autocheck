@@ -3,7 +3,7 @@
 # sky
 
 import subprocess
-from lib import database
+from lib import database, mail, log, warning
 import datetime
 #from lib import conf
 #from lib.tools import format_size
@@ -148,6 +148,22 @@ def record(logger):
     else:
         sql="insert into error value(?, ?, ?, ?, ?)"
         db.update_one(sql, (record_time, 'Oracle', 'connect', '无法连接Oracle', 0))
+def tablespace_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+    logger=log.Logger(log_file, log_level)
+    db=database.db()
+    sql=f"select tablespace_name, used_percent from oracle where record_time=(select max(record_time) from oracle)"
+    data=db.query_all(sql)
+
+    logger.logger.debug("分析表空间...")
+    for i in data:
+        flag=0                 # 是否有预警信息
+        if i[1] >= warning_percent:
+            flag=1
+            logger.logger.warning(f"{i[0]}表空间已使用{i[1]}%")
+        warning_flag=warning.warning(logger, db, flag, "oracle", i[0], warning_interval)
+        if warning_flag:
+            warning_msg=f"Oracle表空间预警:\n{i[0]}表空间已使用{i[1]}%"
+            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=i[0])
 
 if __name__ == "__main__":
     main()
