@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import database
+from lib import database, log, mail, tools
 #from lib.printf import printf
 import pymysql.cursors
 import psutil, os
@@ -193,36 +193,45 @@ def stats():
                 printf("请检查[mysql]配置参数")
             printf("-"*80)
 '''
-def record(logger, mysql_user, mysql_ip, mysql_password, mysql_port):
+
+def record(log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.logger.debug("记录MySQL信息")
-    try:
-        conn=pymysql.connect(
-                host=mysql_ip,
-                port=int(mysql_port), 
-                user=mysql_user, 
-                #cursorclass=pymysql.cursors.DictCursor,   # 返回值带字段名称
-                password=mysql_password
-                )
-        with conn.cursor() as cursor:
-            # 获取pid
-            sql='show variables where variable_name="pid_file"'
-            cursor.execute(sql)
-            pid_file=cursor.fetchone()
-            if pid_file is None or os.path.exists(pid_file[1]) is False:
-                logger.logger.error("无法获取MySQL Pid, 请检查MySQL的pid_file变量及其指定的文件")
-            else:
-                with open(pid_file[1], "r") as f:
-                    pid=int(f.read().strip())
+    port=int(mysql_port)
+    pid=tools.find_pid(port)
+    if pid==0:
+        logger.logger.error(f"MySQL({port})未运行")
+        sql="insert into mysql_constant(record_time, pid, port, boot_time) values(?, ?, ?, ?)"
+        db.update_one(sql, (record_time, pid, port, "0"))
+    else:
+        try:
+            conn=pymysql.connect(
+                    host=mysql_ip,
+                    port=port, 
+                    user=mysql_user, 
+                    #cursorclass=pymysql.cursors.DictCursor,   # 返回值带字段名称
+                    password=mysql_password
+                    )
+            with conn.cursor() as cursor:
+                """
+                # 获取pid
+                sql='show variables where variable_name="pid_file"'
+                cursor.execute(sql)
+                pid_file=cursor.fetchone()
+                if pid_file is None or os.path.exists(pid_file[1]) is False:
+                    logger.logger.error("无法获取MySQL Pid, 请检查MySQL的pid_file变量及其指定的文件")
+                else:
+                    with open(pid_file[1], "r") as f:
+                        pid=int(f.read().strip())
+                """
 
                 mysql_info=psutil.Process(pid).as_dict()
+                # 写入mysql_constant表
                 mysql_create_time=datetime.datetime.fromtimestamp(mysql_info["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
-                sql="select boot_time from mysql_constant where port=? and pid=? order by record_time desc limit 1"
-                boottime_in_db=db.query_one(sql,  (mysql_port,  pid))
-                if boottime_in_db is None or boottime_in_db[0]!=mysql_create_time:
-                    sql="insert into mysql_constant values(?, ?, ?, ?)"
-                    db.update_one(sql, (record_time, pid, mysql_port, mysql_create_time))
+                sql="insert into mysql_constant values(?, ?, ?, ?)"
+                db.update_one(sql, (record_time, pid, port, mysql_create_time))
 
                 mysql_memory_percent=mysql_info['memory_percent']
                 mysql_memory=psutil.virtual_memory()[0] * mysql_memory_percent / 100
@@ -254,9 +263,8 @@ def record(logger, mysql_user, mysql_ip, mysql_password, mysql_port):
                     binlog_do_db=master_data[2]
                     binlog_ignore_db=master_data[3]
 
-                    sql='replace into mysql_master values(?, ?, ?, ?, ?, ?)'
-                    db.update_one(sql, (record_time, pid, role, slave_num, binlog_do_db, binlog_ignore_db))
-
+                    sql='replace into mysql_master values(?, ?, ?, ?, ?)'
+                    db.update_one(sql, (record_time, pid, slave_num, binlog_do_db, binlog_ignore_db))
                 else:                               # slave信息
                     role="slave"
                     slave_list=[]
@@ -274,12 +282,15 @@ def record(logger, mysql_user, mysql_ip, mysql_password, mysql_port):
                         #executed_gtid_set=i[52]
                         executed_gtid_set=i[52].replace('\n', ' ', -1)
                         seconds_behind_master=i[32]
-                        slave_list.append((record_time, pid, role, master_host, master_port, replicate_do_db, replicate_ignore_db, \
+                        slave_list.append((record_time, pid, master_host, master_port, replicate_do_db, replicate_ignore_db, \
                                 slave_io_thread, slave_io_state, slave_sql_thread, slave_sql_state, \
                                 master_uuid, retrieved_gtid_set, executed_gtid_set, seconds_behind_master))
-                    sql='insert into mysql_slave values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    sql='insert into mysql_slave values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                     db.update_all(sql, slave_list)
-                '''
+                db.update_one("update mysql_role set record_time=?, role=?", (record_time, role))
+
+
+                """
                 # 获取慢日志
                 printf("-"*40)
                 printf("慢日志信息:", 2)
@@ -312,14 +323,13 @@ def record(logger, mysql_user, mysql_ip, mysql_password, mysql_port):
                     else:
                         printf(f"MySQL参数log_output未定义为file, 无法分析慢日志")
                 printf("-"*40)
-
-                '''
-    except Exception as e:
-        logger.logger.error(f"无法连接数据库: {e}")
-        sql="insert into error values(?, ?, ?, ?, ?)"
-        db.update_one(sql, (record_time, "MySQL", "connection", str(e), 0))
-    else:
-        conn.close()
+                """
+        except Exception as e:
+            logger.logger.error(f"无法连接数据库: {e}")
+            sql="insert into error values(?, ?, ?, ?, ?)"
+            db.update_one(sql, (record_time, "MySQL", "connection", str(e), 0))
+        else:
+            conn.close()
     
 if __name__ == "__main__":
     main()
