@@ -10,7 +10,7 @@ def warning(logger, db, flag, section, value, warning_interval):
     record_time=record_time_now.strftime("%Y-%m-%d %H:%M:%S")
     # 判断是否出现预警情况
     if flag:    # 出现预警情况
-        sql="select record_time from warning_record where section=? and value=? and debug=0"
+        sql="select record_time from warning_record where section=? and value=? and debug=0 order by record_time desc"
         data=db.query_one(sql, (section, value))        # 获取预警日志的时间记录
         # 无时间记录或时间记录在预警间隔之外, 则将该记录写入预警日志
         if data is None or record_time_now > datetime.datetime.strptime(data[0], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
