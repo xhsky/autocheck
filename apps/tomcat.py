@@ -4,12 +4,13 @@
 
 #from lib.printf import printf
 #from lib import conf, tools
-from lib import database, mail, log, warning
+from lib import database, mail, log, warning, tools
 import psutil
 import datetime
 import subprocess
 import os
 
+'''
 def find_tomcat_pids(tomcat_port_list):
     """根据Tomcat端口获取相应的pid
     """
@@ -22,6 +23,7 @@ def find_tomcat_pids(tomcat_port_list):
         else:
             tomcat_port_and_pid[port]=0
     return tomcat_port_and_pid
+'''
 
 def jstat(pid):
     cmd=f"jstat -gcutil {pid} 1000 10"
@@ -142,8 +144,6 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
             warning_msg=f"Tomcat预警:\nTomcat({port})FGC平均时间为{fgc_time}\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{port}_fgc')
 
-
-    
 '''
 def stats():
     check, tomcat_port, java_home, jstat_duration=conf.get("tomcat",
@@ -206,7 +206,12 @@ def stats():
 def record(log_file, log_level, tomcat_port_list):
     logger=log.Logger(log_file, log_level)
     db=database.db()
-    tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)       # 获取Tomcat端口与pid对应的字典
+
+    tomcat_port_and_pid={}
+    for i in tomcat_port_list:
+        tomcat_port_and_pid[port]=tools.find_pid(int(port))
+
+    #tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)       # 获取Tomcat端口与pid对应的字典
     #logger.logger.debug(f"Tomcat Port and Pid: {tomcat_port_and_pid}")
 
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -279,11 +284,6 @@ def record(log_file, log_level, tomcat_port_list):
         '''
         if pid==0:
             logger.logger.error(f"Tomcat({port})未运行")
-            #tomcat_create_time="0"
-            #sql="select boot_time from tomcat_constant where port=? and pid=? order by record_time desc limit 1"
-            #sql="select pid from tomcat_constant where port=? order by record_time desc"
-            #pid_in_db=db.query_one(sql, (port,))
-            #if pid_in_db is None or pid_in_db[0]!=0:
             sql="insert into tomcat_constant(record_time, pid, port, boot_time) values(?, ?, ?, ?)"
             db.update_one(sql, (record_time, pid, port, "0"))
         else:
