@@ -87,7 +87,7 @@ create table if not exists mysql_slave(record_time text not null, pid int, role 
 create table if not exists oracle(record_time text not null, tablespace_name, size float, used float, used_percent float, free float, primary key(record_time, tablespace_name))
 
 -- mail
-create table if not exists mail(record_time text not null, sender, receive, msg, primary key(record_time, msg))
+create table if not exists mail(record_time text not null, sender, receive, msg);
 
 
 
