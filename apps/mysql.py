@@ -205,6 +205,7 @@ def record(log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port
         logger.logger.error(f"MySQL({port})未运行")
         sql="insert into mysql_constant(record_time, pid, port, boot_time) values(?, ?, ?, ?)"
         db.update_one(sql, (record_time, pid, port, "0"))
+        db.update_one("update mysql_role set record_time=?, role=?", ("0", "master"))
     else:
         try:
             conn=pymysql.connect(
@@ -348,26 +349,29 @@ def master_slave_analysis(log_file, log_level, seconds_behind_master, warning_in
     db=database.db()
     sql="select role, slave_io_thread, slave_sql_thread, seconds_behind_master, slave_io_state, slave_sql_state from mysql_slave, mysql_role where mysql_role.record_time=mysql_slave.record_time"
     data=db.query_one(sql)
-    msg=None
+    conn_msg="slave_conn"
+    delay_msg="slave_delay"
     if data is not None and data[0]=="slave":
         logger.logger.debug("开始分析MySQL主从信息")
         if data[1].lower()==data[2].lower()=="yes":
-            flag, msg= (1, "mysql_slave_delay") if data[3] >= seconds_behind_master else (0, msg)
+            conn_flag=0
+            delay_flag= 1 if data[3] >= seconds_behind_master else 0
         else:
-            flag, msg=1, "mysql_slave_conn"
-    else:
-        flag=0
+            conn_flag=1
+            delay_flag=None
 
-    warning_flag=warning.warning(logger, db, flag, "mysql", msg, warning_interval)
-    if warning_flag:
-        warning_msg="MySQL预警:\n"\
-                "MySQL主从连接:\n"\
-                f"Slave_IO_Running: {data[1]}\n"\
-                f"Slave_SQL_Running: {data[2]}\n"\
-                f"Slave_IO_State: {data[4]}\n"\
-                f"Slave_SQL_Running_State: {data[5]}\n"\
-                f"Seconds_Behind_Master: {data[3]}"
-        mail.send(logger, warning_msg, sender_alias, receive, subject, msg=msg)
+        for flag, msg in [(conn_flag, conn_msg), (delay_flag, delay_msg)]:
+            if flag is not None:
+                warning_flag=warning.warning(logger, db, flag, "mysql", msg, warning_interval)
+                if warning_flag:
+                    warning_msg="MySQL预警:\n"\
+                            "MySQL主从连接:\n"\
+                            f"Slave_IO_Running: {data[1]}\n"\
+                            f"Slave_SQL_Running: {data[2]}\n"\
+                            f"Slave_IO_State: {data[4]}\n"\
+                            f"Slave_SQL_Running_State: {data[5]}\n"\
+                            f"Seconds_Behind_Master: {data[3]}"
+                    mail.send(logger, warning_msg, sender_alias, receive, subject, msg=msg)
     
 if __name__ == "__main__":
     main()
