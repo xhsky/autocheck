@@ -27,12 +27,10 @@ def analysis():
 
     scheduler=BlockingScheduler()
     # host资源记录
-    '''
     logger.logger.info("开始分析主机资源信息...")
-    scheduler.add_job(host.disk_analysis, 'interval', args=[logger, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='disk_ana')
+    scheduler.add_job(host.disk_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='disk_ana')
     scheduler.add_job(host.cpu_analysis, 'interval', args=[logger, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='cpu_ana')
     scheduler.add_job(host.memory_analysis, 'interval', args=[logger, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='mem_ana')
-    '''
     # tomcat资源
     tomcat_check=conf.get("tomcat", "check")[0]
     if tomcat_check=='1':

@@ -7,7 +7,7 @@
 
 #from apscheduler.schedulers.blocking import BlockingScheduler
 #from lib import log, database
-from lib import database, mail
+from lib import log, database, mail, warning
 import datetime
 import psutil
 
@@ -31,29 +31,22 @@ def disk_record(logger):
     sql="insert into disk values(?, ?, ?, ?, ?, ?, ?)"
     db.update_all(sql, disk_list)
 
-def disk_analysis(logger, warning_percent, warning_interval, sender_alias, receive, subject):
+def disk_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     sql=f"select record_time, name, used_percent, mounted from disk where record_time=(select max(record_time) from disk)"
     data=db.query_all(sql)
 
     logger.logger.debug("分析disk...")
-    send_flag=0                 # 是否有预警信息
-    warning_msg="磁盘预警:\n"
     for i in data:
-        if i[2] > warning_percent:
-            send_flag=1
-            msg=f"{i[3]}目录({i[1]})已使用{i[2]}%\n"
-            warning_msg=f"{warning_msg}{msg}"
-    if send_flag==1:
-        record_time=datetime.datetime.strptime(data[0][0], "%Y-%m-%d %H:%M:%S")
-        sql="select max(time) from warning_record where section='host' and value='disk'"
-        warning_time=db.query_one(sql)[0]
-        if warning_time is None or record_time > datetime.datetime.strptime(warning_time, "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
-            logger.logger.debug("写入Disk预警信息")
-            sql="insert into warning_record values(?, ?, ?)"
-            db.update_one(sql, (record_time, "host", "disk"))
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg='disk')
-
+        flag=0                 # 是否有预警信息
+        if i[2] >= warning_percent:
+            flag=1
+            logger.logger.warning(f"{i[3]}目录({i[1]})已使用{i[2]}%")
+        warning_flag=warning.warning(logger, db, flag, "disk", i[3], warning_interval)
+        if warning_flag:
+            warning_msg=f"磁盘预警:\n{i[3]}目录({i[1]})已使用{i[2]}%\n"
+            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=i[3])
 '''
 def disk():
     all_disk=psutil.disk_partitions()
@@ -105,17 +98,14 @@ def cpu_analysis(logger, warning_percent, warning_interval, sender_alias, receiv
     cpu_used_percent=float(data[1])
 
     logger.logger.debug("分析CPU...")
-    if cpu_used_percent > warning_percent:
+    flag=0                 # 是否有预警信息
+    if cpu_used_percent >= warning_percent:
+        flag=1
+        logger.logger.warning(f"CPU当前使用率已达到{cpu_used_percent}%")
+    warning_flag=warning.warning(logger, db, flag, "cpu", "used_percent", warning_interval)
+    if warning_flag:
         warning_msg=f"CPU预警:\nCPU使用率当前已达到{cpu_used_percent}%"
-
-        record_time=datetime.datetime.strptime(data[0], "%Y-%m-%d %H:%M:%S")
-        sql="select max(time) from warning_record where section='host' and value='cpu'"
-        warning_time=db.query_one(sql)[0]
-        if warning_time is None or record_time > datetime.datetime.strptime(warning_time, "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
-            logger.logger.debug("写入CPU预警信息")
-            sql="insert into warning_record values(?, ?, ?)"
-            db.update_one(sql, (record_time, "host", "cpu"))
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg='cpu')
+        mail.send(logger, warning_msg, sender_alias, receive, subject, msg='cpu_used_percent')
 
 def memory_record(logger):
     db=database.db()
@@ -135,17 +125,14 @@ def memory_analysis(logger, warning_percent, warning_interval, sender_alias, rec
     mem_used_percent=float(data[1])
 
     logger.logger.debug("分析Mem...")
+    flag=0                 # 是否有预警信息
     if mem_used_percent > warning_percent:
-        warning_msg=f"内存预警:\n内存使用率当前已达到{mem_used_percent}%"
-
-        record_time=datetime.datetime.strptime(data[0], "%Y-%m-%d %H:%M:%S")
-        sql="select max(time) from warning_record where section='host' and value='mem'"
-        warning_time=db.query_one(sql)[0]
-        if warning_time is None or record_time > datetime.datetime.strptime(warning_time, "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
-            logger.logger.debug("写入Mem预警信息")
-            sql="insert into warning_record values(?, ?, ?)"
-            db.update_one(sql, (record_time, "host", "mem"))
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg='mem')
+        flag=1
+        logger.logger.warning(f"内存当前使用率当前已达到{mem_used_percent}%")
+    warning_flag=warning.warning(logger, db, flag, "mem", "used_percent", warning_interval)
+    if warning_flag:
+        warning_msg=f"内存预警:\n内存当前使用率当前已达到{mem_used_percent}%"
+        mail.send(logger, warning_msg, sender_alias, receive, subject, msg='mem_used_percent')
 
 '''
 def memory():
