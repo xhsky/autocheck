@@ -109,10 +109,10 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
     sql=f"select port, ygc, ygct, fgc, fgct from {table_name} where record_time=(select max(record_time) from {table_name})"
     data=db.query_all(sql)
 
-    #ygc_warning_time=1
-    #fgc_warning_time=10
-    ygc_warning_time=0.01
-    fgc_warning_time=0
+    ygc_warning_time=1
+    fgc_warning_time=10
+    #ygc_warning_time=0.01
+    #fgc_warning_time=0
 
     for i in data:
         port=i[0]
@@ -208,7 +208,7 @@ def record(log_file, log_level, tomcat_port_list):
     db=database.db()
 
     tomcat_port_and_pid={}
-    for i in tomcat_port_list:
+    for port in tomcat_port_list:
         tomcat_port_and_pid[port]=tools.find_pid(int(port))
 
     #tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)       # 获取Tomcat端口与pid对应的字典
@@ -301,8 +301,8 @@ def record(log_file, log_level, tomcat_port_list):
             tomcat_memory=psutil.virtual_memory()[0] * tomcat_info['memory_percent'] / 100
             tomcat_connections=len(tomcat_info["connections"])
             tomcat_num_threads=tomcat_info["num_threads"]
-            variable_data=(record_time, pid, tomcat_memory, tomcat_memory_percent, tomcat_connections, tomcat_num_threads)
-            variable_sql="insert into tomcat_variable values(?, ?, ?, ?, ?, ?)"
+            variable_data=(record_time, pid, port, tomcat_memory, tomcat_memory_percent, tomcat_connections, tomcat_num_threads)
+            variable_sql="insert into tomcat_variable values(?, ?, ?, ?, ?, ?, ?)"
             db.update_one(variable_sql, variable_data)
 
 
