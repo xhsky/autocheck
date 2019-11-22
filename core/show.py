@@ -216,7 +216,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         for i in sentinel_data:
             sentinel_table.add_row(i)
 
-
         printf("启动信息:")
         printf(constant_table)
         printf("运行信息:")
@@ -258,15 +257,16 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         # master_slave信息
         role=db.query_one("select role from mysql_role")[0]
         if role=="master":
-            master_slave_sql="select a.record_time, connected_slave, slave_ip, slave_port, slave_state from redis_master a ,redis_slaves_info b on a.record_time=b.record_time where a.record_time=(select max(record_time) from redis_master)"
-            master_slave_table=pt.PrettyTable(["记录时间", "Slave数量", "Slave IP", "Slave端口", "Slave状态"])
-            master_slave_data=(db.query_all(master_slave_sql))
-            for i in master_slave_data:
-                master_slave_table.add_row(i)
+            master_slave_sql="select record_time, pid, slave_num, binlog_do_db, binlog_ignore_db from mysql_master order by record_time desc"
+            master_slave_table=pt.PrettyTable(["记录时间", "Pid", "Slave数量", "Binlog_do_db", "Binlog_ignore_db"])
         elif role=="slave":
-            master_slave_sql="select record_time, pid, master_host, master_port, replicate_do_db, replicate_ignore_db, slave_io_thread, slave_io_state, slave_sql_thread, slave_sql_state, master_uuid, retrieved_gtid_set, executed_gtid_set, seconds_behind_master from mysql_slave order by record_time desc"
+            master_slave_sql="select record_time, pid, master_host, master_port, replicate_do_db, replicate_ignore_db, "\
+                    "slave_io_thread, slave_io_state, slave_sql_thread, slave_sql_state, "\
+                    "master_uuid, retrieved_gtid_set, executed_gtid_set, seconds_behind_master "\
+                    "from mysql_slave order by record_time desc"
             master_slave_table=pt.PrettyTable(["记录时间", "Pid", "Master主机", "Master端口", "同步数据库", "非同步数据库", "Slave_IO线程", "Slave_IO状态", "Slave_SQL线程", "Slave_SQL状态", "Master_UUID", "已接收的GTID集合", "已执行的GTID集合", "Slave落后Master的秒数"])
-            master_slave_data=(db.query_one(master_slave_sql))
+        master_slave_data=(db.query_one(master_slave_sql))
+        if master_slave_data is not None:
             master_slave_table.add_row(master_slave_data)
 
         printf("启动信息:")

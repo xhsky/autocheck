@@ -251,7 +251,6 @@ def record(log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port
                 cursor.execute(sql)
                 slave_status=cursor.fetchall()
 
-                record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if len(slave_status)==0:            # master信息
                     role="master"
                     sql='show slave hosts'
