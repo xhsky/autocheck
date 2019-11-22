@@ -5,7 +5,6 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from lib import log, conf
 from apps import host, tomcat, redis, backup, mysql, oracle
-import datetime, time
 
 def analysis():
     log_file, log_level=log.get_log_args()
@@ -42,7 +41,8 @@ def analysis():
     redis_check=conf.get("redis", "check")[0]
     if redis_check=="1":
         logger.logger.info("开始分析Redis资源信息...")
-        scheduler.add_job(redis.analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_ana')
+        scheduler.add_job(redis.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_run_ana')
+        scheduler.add_job(redis.master_slave_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_slave_ana')
 
     # 记录mysql
     mysql_check, seconds_behind_master=conf.get("mysql", "check", "seconds_behind_master")
