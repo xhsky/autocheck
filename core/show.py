@@ -181,7 +181,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
                 f"where record_time > datetime('{now_time}', '{modifier}') "\
                 f"and strftime('%M', record_time)%{granularity_level}=0 "\
                 f"order by record_time"
-        master_slave_sql="select record_time, pid, master_host, master_port, master_link_status from redis_slave order by record_time desc"
 
         # 启动信息
         constant_table=pt.PrettyTable(["记录时间", "Pid", "端口", "启动时间"])
@@ -229,7 +228,55 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         printf(sentinel_table)
         printf("*"*100)
 
+    # MySQL
+    if check_dict["mysql_check"]=="1":
+        logger.logger.info("统计MySQL记录信息...")
+        printf("MySQL统计:")
+        printf("*"*100)
 
+        constant_sql=f"select record_time, pid, port, boot_time from mysql_constant "\
+                f"where '{now_time}' >= record_time "\
+                f"order by record_time desc"
+        variable_sql=f"select record_time, pid, mem_used, mem_used_percent, connections, threads_num from mysql_variable "\
+                f"where record_time > datetime('{now_time}', '{modifier}') "\
+                f"and strftime('%M', record_time)%{granularity_level}=0 "\
+                f"order by record_time"
+
+        # 启动信息
+        constant_table=pt.PrettyTable(["记录时间", "Pid", "端口", "启动时间"])
+        constant_data=(db.query_one(constant_sql))
+        constant_table.add_row(constant_data)
+
+        # 运行信息
+        variable_table=pt.PrettyTable(["记录时间", "Pid", "内存使用", "内存使用率", "连接数", "线程数"])
+        variable_data=(db.query_all(variable_sql))
+        for i in variable_data:
+            mem_used=format_size(i[2])
+            mem_used_percent=f"{i[3]:.2f}%"
+            variable_table.add_row((i[0], i[1], mem_used, mem_used_percent, i[4], i[5]))
+
+        # master_slave信息
+        role=db.query_one("select role from mysql_role")[0]
+        if role=="master":
+            master_slave_sql="select a.record_time, connected_slave, slave_ip, slave_port, slave_state from redis_master a ,redis_slaves_info b on a.record_time=b.record_time where a.record_time=(select max(record_time) from redis_master)"
+            master_slave_table=pt.PrettyTable(["记录时间", "Slave数量", "Slave IP", "Slave端口", "Slave状态"])
+            master_slave_data=(db.query_all(master_slave_sql))
+            for i in master_slave_data:
+                master_slave_table.add_row(i)
+        elif role=="slave":
+            master_slave_sql="select record_time, pid, master_host, master_port, replicate_do_db, replicate_ignore_db, slave_io_thread, slave_io_state, slave_sql_thread, slave_sql_state, master_uuid, retrieved_gtid_set, executed_gtid_set, seconds_behind_master from mysql_slave order by record_time desc"
+            master_slave_table=pt.PrettyTable(["记录时间", "Pid", "Master主机", "Master端口", "同步数据库", "非同步数据库", "Slave_IO线程", "Slave_IO状态", "Slave_SQL线程", "Slave_SQL状态", "Master_UUID", "已接收的GTID集合", "已执行的GTID集合", "Slave落后Master的秒数"])
+            master_slave_data=(db.query_one(master_slave_sql))
+            master_slave_table.add_row(master_slave_data)
+
+        printf("启动信息:")
+        printf(constant_table)
+        printf("运行信息:")
+        printf(variable_table)
+        printf("集群信息:")
+        printf(f"当前角色: {role}")
+        printf(master_slave_table)
+        printf("*"*100)
 
     logger.logger.info("统计资源结束...")
     printf("-"*100)
