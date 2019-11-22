@@ -8,7 +8,7 @@ import datetime
 #from lib import conf
 #from lib.tools import format_size
 #from lib.printf import printf
-#import shutil
+import shutil
 
 '''
 def info():
@@ -83,6 +83,30 @@ def info():
         else:
             printf("无法连接Oracle.")
 '''
+def generate_awr(awr_hours):
+    """生成awr
+    """
+    awr_format="html"
+    awr_file='/tmp/awr.html'
+    #awr_file="./report/"
+    days=4
+    sql="""
+    set heading off trimspool on feedback off pagesize 0
+    select trim(max(snap_id)) from dba_hist_snapshot;
+    """
+    cmd=f"su - oracle -c 'sqlplus -S / as sysdba <<EOF\n{sql}\nEOF'"
+    (status, message)=subprocess.getstatusoutput(cmd)
+    max_snap_id=int(message)
+    if awr_hours > max_snap_id:
+        awr_hours=max_snap_id
+    min_snap_id=max_snap_id-awr_hours
+    cmd=f"""su - oracle -c"
+    echo -e '{awr_format}\n{days}\n{min_snap_id}\n{max_snap_id}\n{awr_file}\n' | (sqlplus -S / as sysdba @?/rdbms/admin/awrrpt.sql)"
+    """
+    (status, message)=subprocess.getstatusoutput(cmd)
+    shutil.move(awr_file, "./report/awr.html")
+    return status
+
 def record(logger):
     logger.logger.debug("记录表空间信息")
     db=database.db()
@@ -110,41 +134,12 @@ def record(logger):
     cmd=f"su - oracle -c 'sqlplus -S / as sysdba <<EOF\n{sql}\nEOF'"
     (status, message)=subprocess.getstatusoutput(cmd)
     if status==0:
-        #printf(f"表空间名称    表空间大小    已使用表空间    未使用表空间    使用率(%)")
         data_list=[]
         for i in message.splitlines():
             i=i.split()
             data_list.append((record_time, i[0], i[1], i[2], i[4], i[3]))
         sql="insert into oracle values(?, ?, ?, ?, ?, ?)"
         db.update_all(sql, data_list)
-
-        '''
-        # awr
-        printf("-"*40)
-        printf("awr信息:")
-        awr_format="html"
-        awr_file='/tmp/awr.html'
-        days=4
-        sql="""
-        set heading off trimspool on feedback off pagesize 0
-        select trim(max(snap_id)) from dba_hist_snapshot;
-        """
-        cmd=f"su - oracle -c 'sqlplus -S / as sysdba <<EOF\n{sql}\nEOF'"
-        (status, message)=subprocess.getstatusoutput(cmd)
-        max_snap_id=int(message)
-        if int(awr_hours) > max_snap_id:
-            awr_hours=max_snap_id
-        min_snap_id=max_snap_id-int(awr_hours)
-        cmd=f"""su - oracle -c"
-        echo -e '{awr_format}\n{days}\n{min_snap_id}\n{max_snap_id}\n{awr_file}\n' | (sqlplus -S / as sysdba @?/rdbms/admin/awrrpt.sql)"
-        """
-        (status, message)=subprocess.getstatusoutput(cmd)
-        if status==0:
-            shutil.move(awr_file, "./report/")
-            printf("请查看awr.html文件")
-        else:
-            printf("awr生成失败, 请手动生成")
-        '''
     else:
         sql="insert into error value(?, ?, ?, ?, ?)"
         db.update_one(sql, (record_time, 'Oracle', 'connect', '无法连接Oracle', 0))
