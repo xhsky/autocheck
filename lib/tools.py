@@ -17,6 +17,7 @@ def format_size(byte):
             return f"{mb:.2f}M"
     else:
         return f"{kb:.2f}k"
+
 def find_pid(port):
     """根据端口获取相应的pid
     """
@@ -27,6 +28,15 @@ def find_pid(port):
     else:
         pid=0
     return pid
+
+def printf(message, clear=0):
+    report_file="./report/check.info"
+    if clear==1:
+        with open(report_file, "w", encoding="utf8") as f:
+            f.truncate()
+    else:
+        with open(report_file, "a", encoding="utf8") as f:
+            f.write(f"{message}\n")
             
 if __name__ == "__main__":
     main()
