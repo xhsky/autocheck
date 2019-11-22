@@ -205,7 +205,8 @@ def record(log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port
         logger.logger.error(f"MySQL({port})未运行")
         sql="insert into mysql_constant(record_time, pid, port, boot_time) values(?, ?, ?, ?)"
         db.update_one(sql, (record_time, pid, port, "0"))
-        db.update_one("update mysql_role set record_time=?, role=?", ("0", "master"))
+        role=db.query_one("select role from mysql_role")[0]
+        db.update_one("update mysql_role set record_time=?, role=?", ("0", role))
     else:
         try:
             conn=pymysql.connect(
