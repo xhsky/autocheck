@@ -5,7 +5,7 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from lib import log, conf
 from apps import host, tomcat, redis, backup, mysql, oracle
-import datetime, time
+import datetime
 
 def record():
     log_file, log_level=log.get_log_args()
