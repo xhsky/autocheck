@@ -7,7 +7,7 @@
 #import os, datetime, tarfile, sys
 #import socket, shutil
 
-from core import record as rec, analysis as ana
+from core import record as rec, analysis as ana, show as sh
 from lib import database, log
 import os, sys
 import gevent                                                                                                                                                                 
@@ -18,7 +18,7 @@ def record():
     rec.record()
 
 def show():
-    pass
+    sh.show()
 
 def analysis():
     ana.analysis()
