@@ -47,6 +47,7 @@ def disk_analysis(log_file, log_level, warning_percent, warning_interval, sender
         if warning_flag:
             warning_msg=f"磁盘预警:\n{i[3]}目录({i[1]})已使用{i[2]}%\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=i[3])
+
 '''
 def disk():
     all_disk=psutil.disk_partitions()

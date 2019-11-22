@@ -326,7 +326,7 @@ def record(log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port
                 printf("-"*40)
                 """
         except Exception as e:
-            logger.logger.error(f"无法连接数据库: {e}")
+            logger.logger.error(f"无法连接MySQL: {e}")
             sql="insert into error values(?, ?, ?, ?, ?)"
             db.update_one(sql, (record_time, "MySQL", "connection", str(e), 0))
         else:
