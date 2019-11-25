@@ -17,7 +17,7 @@ def tar_report():
     for report_file in report_files:
         if report_file.startswith("report") and report_file.endswith("tar.gz"):
             os.remove(report_file)
-    report_file="report-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz"
+    report_file=f"report-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz"
     with tarfile.open(report_file, "w:gz") as tar:
         tar.add("./report")
         return report_file
