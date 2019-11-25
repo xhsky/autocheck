@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from core import record, analysis, show
+from core import record, analysis, show, clean
 from lib import database, log
 import os, sys, atexit, time
 import gevent                                                                                                                                                                 
@@ -75,7 +75,8 @@ def daemonize(pid_file, rootdir):
     sys.stderr.flush()
 
     # dup2函数原子化地关闭和复制文件描述符，重定向到/dev/nul，即丢弃所有输入输出
-    with open('/dev/null') as read_null, open('/dev/null', 'w') as write_null:
+    #with open('/dev/null') as read_null, open('/dev/null', 'w') as write_null:
+    with open('/dev/null') as read_null, open('./logs/errors.log', 'w') as write_null:
         os.dup2(read_null.fileno(), sys.stdin.fileno())
         os.dup2(write_null.fileno(), sys.stdout.fileno())
         os.dup2(write_null.fileno(), sys.stderr.fileno())
@@ -94,7 +95,7 @@ def main():
     daemonize('logs/autocheck.pid', rootdir)
     monkey.patch_all()
 
-    check_item=[record.record,  show.show,  analysis.analysis]
+    check_item=[record.record,  show.show,  analysis.analysis, clean.clean]
     gevent_list=[]
     for i in check_item:
         g=gevent.spawn(i, )
