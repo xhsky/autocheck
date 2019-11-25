@@ -13,6 +13,7 @@ def record():
     logger.logger.info("开始采集资源信息...")
 
     scheduler=BlockingScheduler()
+    min_value=10
 
     # host资源记录
     logger.logger.info("开始采集主机资源信息...")
@@ -23,11 +24,27 @@ def record():
             "swap_interval",
             "boot_time_interval"
             )
-    scheduler.add_job(host.disk_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(disk_interval), id='disk')
-    scheduler.add_job(host.cpu_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(cpu_interval), id='cpu')
-    scheduler.add_job(host.memory_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(memory_interval), id='memory')
-    scheduler.add_job(host.swap_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(swap_interval), id='swap')
-    scheduler.add_job(host.boot_time_record, 'interval', next_run_time=datetime.datetime.now(), args=[logger], minutes=int(boot_time_interval), id='boot_time')
+    if int(disk_interval) < min_value:
+        disk_interval=min_value
+    if int(cpu_interval) < min_value:
+        cpu_interval=min_value
+    if int(memory_interval) < min_value:
+        memory_interval=min_value
+    if int(swap_interval) < min_value:
+        swap_interval=min_value
+    if int(boot_time_interval) < min_value:
+        boot_time_interval=min_value
+
+    logger.logger.info("开始采集磁盘资源信息...")
+    scheduler.add_job(host.disk_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(disk_interval), id='disk_record')
+    logger.logger.info("开始采集CPU资源信息...")
+    scheduler.add_job(host.cpu_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(cpu_interval), id='cpu_record')
+    logger.logger.info("开始采集内存资源信息...")
+    scheduler.add_job(host.memory_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(memory_interval), id='memory_record')
+    logger.logger.info("开始采集Swap资源信息...")
+    scheduler.add_job(host.swap_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(swap_interval), id='swap_record')
+    logger.logger.info("开始采集启动时间资源信息...")
+    scheduler.add_job(host.boot_time_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(boot_time_interval), id='boot_time_record')
 
     # tomcat资源
     tomcat_check, tomcat_interval, tomcat_port=conf.get("tomcat", 
@@ -40,7 +57,9 @@ def record():
         tomcat_port_list=[]                                                 # 将tomcat_port参数改为列表
         for i in tomcat_port.split(","):
             tomcat_port_list.append(i.strip())
-        scheduler.add_job(tomcat.record, 'interval', args=[log_file, log_level, tomcat_port_list], next_run_time=datetime.datetime.now(), minutes=int(tomcat_interval), id='tomcat')
+        if int(tomcat_interval) < min_value:
+            tomcat_interval=min_value
+        scheduler.add_job(tomcat.record, 'interval', args=[log_file, log_level, tomcat_port_list], next_run_time=datetime.datetime.now(), seconds=int(tomcat_interval), id='tomcat_record')
 
     # redis资源
     redis_check, redis_interval, redis_password, redis_port, sentinel_port, sentinel_name, commands=conf.get("redis", 
@@ -53,9 +72,11 @@ def record():
            "commands"
            )
     if redis_check=="1":
+        if int(redis_interval) < min_value:
+            redis_interval=min_value
         logger.logger.info("开始采集Redis资源信息...")
-        scheduler.add_job(redis.record, 'interval', args=[logger, redis_password, redis_port, sentinel_port, sentinel_name, commands], \
-                next_run_time=datetime.datetime.now(), minutes=int(redis_interval), id='redis')
+        scheduler.add_job(redis.record, 'interval', args=[log_file, log_level, redis_password, redis_port, sentinel_port, sentinel_name, commands], \
+                next_run_time=datetime.datetime.now(), seconds=int(redis_interval), id='redis_record')
 
     # backup
     backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
@@ -84,7 +105,7 @@ def record():
             cron_time=cron_time_list[i].split(":")
             hour=cron_time[0].strip()
             minute=cron_time[1].strip()
-            scheduler.add_job(backup.record, 'cron', args=[logger, directory, regular], day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
+            scheduler.add_job(backup.record, 'cron', args=[log_file, log_level, directory, regular], day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
 
     # 记录mysql
     mysql_check, mysql_interval, mysql_user, mysql_ip, mysql_port, mysql_password=conf.get("mysql", 
@@ -96,8 +117,10 @@ def record():
             "mysql_password"
             )
     if mysql_check=="1":
+        if int(mysql_interval) < min_value:
+            mysql_interval = min_value
         logger.logger.info("开始采集MySQL资源信息...")
-        scheduler.add_job(mysql.record, 'interval', args=[log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port], next_run_time=datetime.datetime.now(), minutes=int(mysql_interval), id='mysql')
+        scheduler.add_job(mysql.record, 'interval', args=[log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port], next_run_time=datetime.datetime.now(), seconds=int(mysql_interval), id='mysql_record')
 
     # 记录Oracle
     oracle_check, oracle_interval=conf.get("oracle", 
@@ -105,8 +128,10 @@ def record():
             "oracle_interval"
             )
     if oracle_check=="1":
+        if int(oracle_interval) < min_value:
+            oracle_interval = min_value
         logger.logger.info("开始记录Oracle信息...")
-        scheduler.add_job(oracle.record, 'interval', args=[logger], next_run_time=datetime.datetime.now(), minutes=int(oracle_interval), id='oracle')
+        scheduler.add_job(oracle.record, 'interval', args=[log_file, log_level], next_run_time=datetime.datetime.now(), seconds=int(oracle_interval), id='oracle_record')
 
     scheduler.start()
     

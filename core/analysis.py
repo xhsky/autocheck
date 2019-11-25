@@ -17,45 +17,50 @@ def analysis():
             "subject"
             )
 
-    warning_percent, warning_interval=conf.get("autocheck",
+    warning_percent, warning_interval, analysis_interval=conf.get("autocheck",
         "warning_percent", 
-        "warning_interval"
+        "warning_interval", 
+        "analysis_interval"
         )
+    min_value=5
     warning_percent=float(warning_percent)
     warning_interval=int(warning_interval)
+    analysis_interval=int(analysis_interval)
+    if analysis_interval < min_value:
+        analysis_interval=min_value
 
     scheduler=BlockingScheduler()
     # host资源记录
     logger.logger.info("开始分析主机资源信息...")
-    scheduler.add_job(host.disk_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='disk_ana')
-    scheduler.add_job(host.cpu_analysis, 'interval', args=[logger, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='cpu_ana')
-    scheduler.add_job(host.memory_analysis, 'interval', args=[logger, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='mem_ana')
+    scheduler.add_job(host.disk_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='disk_ana')
+    scheduler.add_job(host.cpu_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='cpu_ana')
+    scheduler.add_job(host.memory_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='mem_ana')
     # tomcat资源
     tomcat_check=conf.get("tomcat", "check")[0]
     if tomcat_check=='1':
         logger.logger.info("开始分析Tomcat资源信息...")
-        scheduler.add_job(tomcat.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='tomcat_run_ana')
-        scheduler.add_job(tomcat.jvm_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='tomcat_jvm_ana')
+        scheduler.add_job(tomcat.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='tomcat_run_ana')
+        scheduler.add_job(tomcat.jvm_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='tomcat_jvm_ana')
 
     # redis资源
     redis_check=conf.get("redis", "check")[0]
     if redis_check=="1":
         logger.logger.info("开始分析Redis资源信息...")
-        scheduler.add_job(redis.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_run_ana')
-        scheduler.add_job(redis.master_slave_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_slave_ana')
+        scheduler.add_job(redis.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='redis_run_ana')
+        scheduler.add_job(redis.master_slave_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='redis_slave_ana')
 
     # 记录mysql
     mysql_check, seconds_behind_master=conf.get("mysql", "check", "seconds_behind_master")
     if mysql_check=="1":
         logger.logger.info("开始分析MySQL资源信息...")
-        scheduler.add_job(mysql.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_run_ana')
-        scheduler.add_job(mysql.master_slave_analysis, 'interval', args=[log_file, log_level, int(seconds_behind_master), warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_slave_ana')
+        scheduler.add_job(mysql.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='mysql_run_ana')
+        scheduler.add_job(mysql.master_slave_analysis, 'interval', args=[log_file, log_level, int(seconds_behind_master), warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='mysql_slave_ana')
 
     # 记录Oracle
     oracle_check=conf.get("oracle", "check")[0]
     if oracle_check=="1":
         logger.logger.info("开始分析Oracle信息...")
-        scheduler.add_job(oracle.tablespace_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=31, id='oracle_tablespace_ana')
+        scheduler.add_job(oracle.tablespace_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='oracle_tablespace_ana')
     '''
     # backup
     backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
