@@ -8,6 +8,19 @@ from lib.tools import format_size, printf
 import datetime, os
 import prettytable as pt
 from apps import oracle
+import tarfile
+
+def tar_report():
+    """巡检报告打包
+    """
+    report_files=os.listdir(".")
+    for report_file in report_files:
+        if report_file.startswith("report") and report_file.endswith("tar.gz"):
+            os.remove(report_file)
+    report_file="report-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz"
+    with tarfile.open(report_file, "w:gz") as tar:
+        tar.add("./report")
+        return report_file
 
 def resource_show(hostname, check_dict, granularity_level, sender_alias, receive, subject):
     log_file, log_level=log.get_log_args()
@@ -15,7 +28,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     db=database.db()
     now_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     modifier="-24 hour"
-    #modifier="-10 minute"
 
     # 重置统计文件
     os.makedirs("./report",  exist_ok=True)
@@ -23,7 +35,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
 
     logger.logger.info("统计资源记录信息...")
 
-    printf(f"记录统计开始时间: {now_time}")
+    printf(f"统计开始时间: {now_time}")
     printf(f"主机名: {hostname}")
     printf("-"*100)
     
@@ -168,7 +180,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             printf(jvm_table)
             printf("*"*100)
 
-
     # Redis
     if check_dict["redis_check"]=="1":
         logger.logger.info("统计Redis记录信息...")
@@ -312,11 +323,19 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         else:
             printf("生成awr报告失败, 请自行手动生成")
 
-
     logger.logger.info("统计资源结束...")
     printf("-"*100)
     end_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    printf(f"记录统计结束时间: {end_time}")
+    printf(f"统计结束时间: {end_time}")
+
+    tar_file=tar_report()
+    sender_alias, receive, subject=conf.get("mail",
+            "sender",
+            "receive",
+            "subject"
+            )
+    warning_msg="\n请查看统计报告."
+    mail.send(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
 
 def show():
     check, send_time, granularity_level=conf.get("send", 
