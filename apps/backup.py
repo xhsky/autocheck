@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import database
+from lib import database, log
 #from lib.printf import printf
 #from lib.tools import format_size
 #import os, time
@@ -22,29 +22,6 @@ def show(backup_dirs_dict):
             printf("该目录或指定结尾文件不存在.")
         printf("*"*40)
 
-def analysis(backup_dirs_dict):
-    """对备份文件进行预警
-    1. 备份目录不存在则提示
-    2. 当天的备份文件未生成则提示
-    3. 当天的备份文件小于上一个的大小的99%则提示
-    """
-    printf("备份信息:", 1)
-    now_date=time.time()
-    for i in backup_dirs_dict:
-        if backup_dirs_dict[i] is not None:
-            backup_dir_list=sorted(backup_dirs_dict[i].items(), key=lambda d:d[1][1])
-            last_date=backup_dir_list[-1][1][1]
-
-            if time.strftime('%Y-%m-%d', time.localtime(last_date))!=time.strftime('%Y-%m-%d', time.localtime(now_date)):
-                printf(f"备份({i})下未生成今天的备份.", 1)
-            else:
-                if len(backup_dir_list) > 1:
-                    if backup_dir_list[-1][1][0] < backup_dir_list[-2][1][0] * 0.99:
-                        printf(f"备份({i})下今天的备份文件({format_size(backup_dir_list[-1][1][0])})与之前的备份文件({format_size(backup_dir_list[-2][1][0])})相差较大.", 1)
-                    else:
-                        printf(f"备份({i})正常.", 1)
-        else:
-            printf(f"备份目录{i}或指定结尾文件不存在.", 1)
 
 def collect(backup_dict):
     """收集信息
@@ -88,7 +65,8 @@ def cat():
         printf("-"*80)
 '''
 
-def record(logger, directory, regular):
+def record(log_file, log_level, directory, regular):
+    logger=log.Logger(log_file, log_level)
     logger.logger.info(f"记录备份目录{directory}的信息...")
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     backup_info=[]
@@ -110,6 +88,29 @@ def record(logger, directory, regular):
     db.update_one(delete_sql, [directory])
     sql="insert into backup values(?, ?, ?, ?, ?)"
     db.update_all(sql, backup_info)
+
+def analysis(backup_dirs_dict):
+    """对备份文件进行预警
+    1. 备份目录不存在则提示
+    2. 当天的备份文件未生成则提示
+    3. 当天的备份文件小于上一个的大小的99%则提示
+    """
+    now_date=time.time()
+    for i in backup_dirs_dict:
+        if backup_dirs_dict[i] is not None:
+            backup_dir_list=sorted(backup_dirs_dict[i].items(), key=lambda d:d[1][1])
+            last_date=backup_dir_list[-1][1][1]
+
+            if time.strftime('%Y-%m-%d', time.localtime(last_date))!=time.strftime('%Y-%m-%d', time.localtime(now_date)):
+                printf(f"备份({i})下未生成今天的备份.", 1)
+            else:
+                if len(backup_dir_list) > 1:
+                    if backup_dir_list[-1][1][0] < backup_dir_list[-2][1][0] * 0.99:
+                        printf(f"备份({i})下今天的备份文件({format_size(backup_dir_list[-1][1][0])})与之前的备份文件({format_size(backup_dir_list[-2][1][0])})相差较大.", 1)
+                    else:
+                        printf(f"备份({i})正常.", 1)
+        else:
+            printf(f"备份目录{i}或指定结尾文件不存在.", 1)
 
 if __name__ == "__main__":
     main()

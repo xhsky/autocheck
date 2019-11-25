@@ -2,16 +2,12 @@
 # *-* coding:utf8 *-*
 # sky
 
-#from lib.printf import printf
-#from lib import tools
-
-#from apscheduler.schedulers.blocking import BlockingScheduler
-#from lib import log, database
 from lib import log, database, mail, warning
 import datetime
 import psutil
 
-def disk_record(logger):
+def disk_record(log_file, log_level):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     logger.logger.debug("记录磁盘信息...")
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -48,42 +44,8 @@ def disk_analysis(log_file, log_level, warning_percent, warning_interval, sender
             warning_msg=f"磁盘预警:\n{i[3]}目录({i[1]})已使用{i[2]}%\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=i[3])
 
-'''
-def disk():
-    all_disk=psutil.disk_partitions()
-
-    # 显示
-    printf("磁盘信息:")
-    disk_name_length=[]         # 获取磁盘名称的长度, 用于下方格式化输出
-    for disk_name in all_disk:
-        disk_name_length.append(len(disk_name[0]))
-    length=max(disk_name_length)
-    space_length=f" "*(length-4)
-
-    printf(f"磁盘{space_length}  大小      已使用            可用      挂载点")
-    for i in all_disk:
-        size=psutil.disk_usage(i[1])
-        total=tools.format_size(size[0])
-        used=f"{tools.format_size(size[1])}/{size[3]}%"
-        free=tools.format_size(size[2])
-        printf(f"{i[0]:<{length}}  {total:<8}  {used:<16}  {free:<8}  {i[1]:<}")
-
-    # 分析
-    normal=0
-    for i in all_disk:
-        size=psutil.disk_usage(i[1])
-        used_percent=size[3]
-        free=size[2]
-        warning_value=95
-        if used_percent > warning_value:     # 使用率大于95%或可用空间小于5G
-            printf(f"磁盘'{i[1]}'空间已超过{warning_value}%, 请查看", 1)
-            normal=1
-
-    if normal==0:
-        printf("磁盘空间正常.", 1)
-'''
-
-def cpu_record(logger):
+def cpu_record(log_file, log_level):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     logger.logger.debug("记录cpu信息...")
     sql="insert into cpu values(?, ?, ?)"
@@ -92,7 +54,8 @@ def cpu_record(logger):
     cpu_used_percent=psutil.cpu_percent(interval=5)
     db.update_one(sql, (record_time, cpu_count, cpu_used_percent))
 
-def cpu_analysis(logger, warning_percent, warning_interval, sender_alias, receive, subject):
+def cpu_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     sql="select record_time, cpu_used_percent from cpu order by record_time desc"
     data=db.query_one(sql)
@@ -108,7 +71,8 @@ def cpu_analysis(logger, warning_percent, warning_interval, sender_alias, receiv
         warning_msg=f"CPU预警:\nCPU使用率当前已达到{cpu_used_percent}%"
         mail.send(logger, warning_msg, sender_alias, receive, subject, msg='cpu_used_percent')
 
-def memory_record(logger):
+def memory_record(log_file, log_level):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     logger.logger.debug("记录内存信息...")
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -116,10 +80,10 @@ def memory_record(logger):
 
     sql="insert into memory values(?, ?, ?, ?, ?, ?)"
     total, avail, used, used_percent, free=mem[0], mem[1], mem[3], mem[2], mem[4]
-
     db.update_one(sql, (record_time, total, avail, used, used_percent, free))
 
-def memory_analysis(logger, warning_percent, warning_interval, sender_alias, receive, subject):
+def memory_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     sql="select record_time, used_percent from memory order by record_time desc"
     data=db.query_one(sql)
@@ -135,29 +99,8 @@ def memory_analysis(logger, warning_percent, warning_interval, sender_alias, rec
         warning_msg=f"内存预警:\n内存当前使用率当前已达到{mem_used_percent}%"
         mail.send(logger, warning_msg, sender_alias, receive, subject, msg='mem_used_percent')
 
-'''
-def memory():
-    printf("内存信息:")
-    mem=psutil.virtual_memory()
-
-    # 显示
-    printf(f"总内存(total): {tools.format_size(mem[0])}")
-    printf(f"可用内存(available): {tools.format_size(mem[1])}")
-    printf(f"已用内存(used): {tools.format_size(mem[3])}/{mem[2]}%") # (total-avail)/total
-    printf(f"空闲内存(free): {tools.format_size(mem[4])}")
-
-    # 分析
-    warning_value=95
-    if mem[2] > warning_value:
-        printf(f"内存使用已超过{warning_value}%.")
-        normal=1
-
-    normal=0
-    if normal==0:
-        printf("内存空间正常.", 1)
-'''
-
-def swap_record(logger):
+def swap_record(log_file, log_level):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     logger.logger.debug("记录交换分区信息...")
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -167,7 +110,8 @@ def swap_record(logger):
     total, used, used_percent, free=swap_mem[0], swap_mem[1], swap_mem[3], swap_mem[2]
     db.update_one(sql, (record_time, total, used, used_percent, free))
 
-def boot_time_record(logger):
+def boot_time_record(log_file, log_level):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     logger.logger.debug("记录服务器启动时间信息...")
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

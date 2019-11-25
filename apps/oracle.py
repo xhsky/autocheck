@@ -107,7 +107,8 @@ def generate_awr(awr_hours):
     shutil.move(awr_file, "./report/awr.html")
     return status
 
-def record(logger):
+def record(log_file, log_level):
+    logger=log.Logger(log_file, log_level)
     logger.logger.debug("记录表空间信息")
     db=database.db()
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

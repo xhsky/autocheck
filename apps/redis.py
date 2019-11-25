@@ -209,7 +209,8 @@ def record(logger, redis_password, redis_port, sentinel_port, sentinel_name, com
             sql="insert into error values(?, ?, ?, ?, ?)"
             db.update_one(sql, (record_time, 'Sentinel', "connection", str(e), 0))
 '''
-def record(logger, redis_password, redis_port, sentinel_port, sentinel_name, commands):
+def record(log_file, log_level, redis_password, redis_port, sentinel_port, sentinel_name, commands):
+    logger=log.Logger(log_file, log_level)
     db=database.db()
     logger.logger.debug("记录Redis资源")
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

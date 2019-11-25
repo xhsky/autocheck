@@ -11,74 +11,11 @@ import subprocess
 import os
 
 '''
-def find_tomcat_pids(tomcat_port_list):
-    """根据Tomcat端口获取相应的pid
-    """
-    tomcat_port_and_pid={}
-    for port in tomcat_port_list:
-        for i in psutil.net_connections():
-            if port==str(i[3][1]) and i[6] is not None:
-                tomcat_port_and_pid[port]=i[6]
-                break
-        else:
-            tomcat_port_and_pid[port]=0
-    return tomcat_port_and_pid
-'''
-
 def jstat(pid):
     cmd=f"jstat -gcutil {pid} 1000 10"
     (status, message)=subprocess.getstatusoutput(cmd)
     return message
-
 '''
-def analysis(logger, db, flag, section, value, warning_interval):
-    warning_flag=0
-    record_time_now=datetime.datetime.now()
-    record_time=record_time_now.strftime("%Y-%m-%d %H:%M:%S")
-    # 判断是否出现预警情况
-    if flag:    # 出现预警情况
-        sql="select record_time from warning_record where section=? and value=? and debug=0"
-        data=db.query_one(sql, (section, value))        # 获取预警日志的时间记录
-        # 无时间记录或时间记录在预警间隔之外, 则将该记录写入预警日志
-        if data is None or record_time_now > datetime.datetime.strptime(data[0], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
-            warning_flag=1
-            sql="insert into warning_record values(?, ?, ?, ?)"
-            db.update_one(sql, (record_time, section, value, 0))
-            logger.logger.info(f"写入{section} {value}预警信息")
-        else:
-            logger.logger.info(f"当前处于{section} {value}预警间隔时间内, 不进行下一步处理")
-    else:       # 非预警, 则将预警日志修复
-        sql="select count(*) from warning_record where section=? and value=? and debug=0"
-        exist=db.query_one(sql, (section, value))[0]
-        if exist:
-            logger.logger.info(f"{section} {value}预警修复")
-            sql="update warning_record set debug=1 where section=? and value=?"
-            db.update_one(sql, (section, value))
-    return warning_flag
-def analysis1(logger, db, port, pid, warning_interval):
-    warning_msg=None
-    record_time_now=datetime.datetime.now()
-    record_time=record_time_now.strftime("%Y-%m-%d %H:%M:%S")
-    if pid == 0:
-        sql="select record_time from warning_record where section=? and value=? and debug=0"
-        data=db.query_one(sql, (port, "running"))
-        if data is None or record_time_now > datetime.datetime.strptime(data[0], "%Y-%m-%d %H:%M:%S") + datetime.timedelta(minutes=warning_interval):
-            warning_msg=f"Tomcat预警:\nTomcat({port})未运行\n"
-            sql="insert into warning_record values(?, ?, ?, ?)"
-            db.update_one(sql, (record_time, port, "running", 0))
-            logger.logger.info(f"写入Tomcat{port}预警信息")
-        else:
-            logger.logger.info("当前处于预警间隔时间内, 不进行下一步处理")
-    else:
-        sql="select count(*) from warning_record where section=? and value=? and debug=0"
-        exist=db.query_one(sql, (port, "running"))[0]
-        if exist:
-            logger.logger.info(f"{port}:running修复")
-            sql="update warning_record set debug=1 where section=? and value=?"
-            db.update_one(sql, (port, "running"))
-    return warning_msg
-'''
-
 def running_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
     logger=log.Logger(log_file, log_level)
     logger.logger.debug("开始分析Tomcat运行情况...")
@@ -144,64 +81,6 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
             warning_msg=f"Tomcat预警:\nTomcat({port})FGC平均时间为{fgc_time}\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{port}_fgc')
 
-'''
-def stats():
-    check, tomcat_port, java_home, jstat_duration=conf.get("tomcat",
-            "check",
-            "tomcat_port",
-            "java_home",
-            "jstat_duration"
-            )
-
-    if check=="1":
-        printf("Tomcat信息:", 2)
-
-        tomcat_port_list=[]                          # 将tomcat_port参数改为列表
-        for i in tomcat_port.split(","):        
-            tomcat_port_list.append(i.strip())
-        tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)            # 获取Tomcat端口与pid对应的字典
-
-        for i in tomcat_port_and_pid:                # 根据pid获取相应信息
-            printf(f"Tomcat({i}):", 2)
-            if tomcat_port_and_pid[i]==0:
-                printf(f"检查该Tomcat({i})是否启动", 2)
-                printf("-"*40)
-                continue
-            pid=tomcat_port_and_pid[i]
-            tomcat_info=psutil.Process(pid).as_dict()
-            printf(f"Tomcat Pid: {pid}")
-
-            tomcat_create_time=datetime.datetime.fromtimestamp(tomcat_info["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
-            printf(f"程序启动时间: {tomcat_create_time}")
-
-            tomcat_memory_percent=f"{tomcat_info['memory_percent']:.2f}"
-            tomcat_memory=tools.format_size(psutil.virtual_memory()[0] * tomcat_info['memory_percent'] / 100)
-            printf(f"内存占用: {tomcat_memory}/{tomcat_memory_percent}%")
-
-            tomcat_connections=len(tomcat_info["connections"])
-            printf(f"连接数: {tomcat_connections}")
-
-            tomcat_num_threads=tomcat_info["num_threads"]
-            printf(f"线程数: {tomcat_num_threads}")
-
-            tomcat_cmdline=tomcat_info["cmdline"]
-            printf(f"启动参数: {tomcat_cmdline}")
-
-
-            printf(f"内存回收:")
-            if java_home is not None and jstat_duration is not None:
-                jstat_message=jstat(java_home, pid, jstat_duration)
-                if jstat_message!="0":
-                    printf(f"{jstat_message}")
-                    analysis(jstat_message)
-                else:
-                    printf(f"请检查配置文件, java_home参数的配置无法找到{java_home}/bin/jstat, 故不能进行jvm内存回收检查")
-            else:
-                printf("请检查配置文件中java_home和jstat_duration两个参数配置")
-
-            printf("-"*40)
-        printf("-"*80)
-'''
 
 def record(log_file, log_level, tomcat_port_list):
     logger=log.Logger(log_file, log_level)
