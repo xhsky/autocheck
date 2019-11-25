@@ -2,6 +2,8 @@ create table if not exists status(section varchar(12) not null, option varchar(2
 insert into status values('autocheck', 'hostname', 'dream', 1);
 insert into status values('autocheck', 'warning_percent', '95', 1);
 insert into status values('autocheck', 'warning_interval', '30', 1);
+insert into status values('autocheck', 'analysis_interval', '5', 1);
+insert into status values('autocheck', 'keep_days', '7', 1);
 insert into status values('host', 'disk_interval', '60', 1);
 insert into status values('host', 'cpu_interval', '30', 1);
 insert into status values('host', 'memory_interval', '30', 1);
