@@ -69,7 +69,6 @@ def analysis():
             "cron_time"
             )
     if backup_check=="1":
-        logger.logger.info("开始记录备份信息...")
         dir_list=[]
         for i in backup_dir.split(","):
             dir_list.append(i.strip())
@@ -83,7 +82,7 @@ def analysis():
             cron_time=cron_time_list[i].split(":")
             hour=cron_time[0].strip()
             minute=cron_time[1].strip()
-            scheduler.add_job(backup.analysis, 'cron', args=[log_file, log_level, directory, warning_interval, sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute)+1, id=f'backup{i}_ana')
+            scheduler.add_job(backup.analysis, 'cron', args=[log_file, log_level, directory, 0, sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute)+1, id=f'backup{i}_ana')
 
     scheduler.start()
     

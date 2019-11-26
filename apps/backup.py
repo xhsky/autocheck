@@ -96,19 +96,19 @@ def analysis(log_file, log_level, directory, warning_interval, sender_alias, rec
     """
     logger=log.Logger(log_file, log_level)
     db=database.db()
-    logger.logger.debug("分析备份文件...")
-    #sql=f"select record_time, name, used_percent, mounted from disk where record_time=(select max(record_time) from disk)"
+    logger.logger.info(f"分析备份目录{directory}文件...")
     sql="select record_time, directory, filename, size, ctime from backup where directory=? order by record_time, ctime desc limit 2"
     data=db.query_all(sql, (directory, ))
     now_time=datetime.datetime.now().strftime("%Y-%m-%d")
 
+    flag=0                 # 是否有预警信息
+    value=None
     if len(data) < 2:
-        if data[1][2] is None:
+        if data[0][2] is None:
             flag=1
             value="dir_is_None"
             warning_msg=f"备份预警:\n备份目录({directory})不存在"
     else:
-        flag=0                 # 是否有预警信息
         if now_time not in data[0][4]:
             flag=1
             warning_msg=f"备份预警:\n备份目录({directory})当天备份文件未生成"
@@ -118,9 +118,9 @@ def analysis(log_file, log_level, directory, warning_interval, sender_alias, rec
             warning_msg=f"备份预警:\n备份目录({directory})当天备份文件({format_size(data[0][3])})与上一次({format_size(data[1][3])})相比相差较大"
             value="file_is_small"
 
-        warning_flag=warning.warning(logger, db, flag, f"backup {directory}", value, warning_interval)
-        if warning_flag:
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f"{directory}_{value}")
+    warning_flag=warning.warning(logger, db, flag, f"backup {directory}", value, warning_interval)
+    if warning_flag:
+        mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f"{directory} {value}")
 
 if __name__ == "__main__":
     main()
