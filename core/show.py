@@ -330,9 +330,12 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         printf("*"*100)
     
     # Oracle表空间
-    if check_dict["oracle_check"]=="1":
+    if check_dict["oracle_check"][0]=="1":
         logger.logger.info("统计Oracle表空间记录信息...")
         printf("Oracle表空间统计:")
+        oracle_granularity_level=int(60/int(check_dict['oracle_check'][1])*granularity_level)
+        oracle_granularity_level=oracle_granularity_level if oracle_granularity_level!=0 else 1
+
         sql="select distinct tablespace_name from oracle"
         tablespace_names=db.query_all(sql)
         for i in tablespace_names:
@@ -341,15 +344,15 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             sql=f"select record_time, size, used, used_percent, free from oracle "\
                     f"where tablespace_name=? "\
                     f"and record_time > datetime('{now_time}', '{modifier}') "\
-                    f"and strftime('%M', record_time)%{granularity_level}=0 "\
                     f"order by record_time"
             tablespace_data=db.query_all(sql, (i, ))
-            for j in tablespace_data:
-                total=format_size(j[1])
-                used=format_size(j[2])
-                used_percent=f"{j[3]}%"
-                free=format_size(j[4])
-                table.add_row((j[0], i, total, used, used_percent, free))
+            for index, item in enumerate(tablespace_data):
+                if index%oracle_granularity_level==0 or index==0:
+                    total=format_size(item[1])
+                    used=format_size(item[2])
+                    used_percent=f"{item[3]}%"
+                    free=format_size(item[4])
+                    table.add_row((item[0], i, total, used, used_percent, free))
             printf(f"{i}表空间统计:")
             printf(table)
             printf("*"*100)
@@ -361,7 +364,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             printf("请在附件中查看awr.html文件")
         else:
             printf("生成awr报告失败, 请自行手动生成")
-
 
     logger.logger.info("统计资源结束...")
     printf("-"*100)
