@@ -257,6 +257,27 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         printf(sentinel_table)
         printf("*"*100)
 
+    # backup
+    if check_dict["backup_check"]=="1":
+        logger.logger.info("统计备份记录信息...")
+        printf("备份统计:")
+        backup_dirs=conf.get("backup", "dir")[0].split(",")
+        for i in backup_dirs:
+            directory=i.strip()
+            table=pt.PrettyTable(["记录时间", "备份文件", "大小", "创建时间"])
+            sql=f"select record_time, filename, size, ctime from backup "\
+                    f"where directory=?"\
+                    f"order by ctime"
+            backup_data=db.query_all(sql, (directory, ))
+            for j in backup_data:
+                if j[2] is not None:
+                    size=format_size(j[2])
+                    table.add_row((j[0], j[1], size, j[3]))
+
+            printf(f"备份({directory})统计信息:")
+            printf(table)
+            printf("*"*100)
+
     # MySQL
     if check_dict["mysql_check"]=="1":
         logger.logger.info("统计MySQL记录信息...")
@@ -340,6 +361,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             printf("请在附件中查看awr.html文件")
         else:
             printf("生成awr报告失败, 请自行手动生成")
+
 
     logger.logger.info("统计资源结束...")
     printf("-"*100)
