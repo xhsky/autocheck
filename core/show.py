@@ -50,21 +50,23 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     printf("磁盘统计:")
     sql="select distinct mounted from disk"
     disk_names=db.query_all(sql)
+    disk_granularity_level=int(60/int(check_dict['host_check'][0])*granularity_level)
+    disk_granularity_level=disk_granularity_level if disk_granularity_level!=0 else 1
     for i in disk_names:
         i=i[0]
         table=pt.PrettyTable(["记录时间", "挂载点", "磁盘名称", "磁盘大小", "已使用大小", "已使用百分比", "可用"])
         sql=f"select record_time, name, total, used, used_percent, avail from disk "\
                 f"where mounted=? "\
                 f"and record_time > datetime('{now_time}', '{modifier}') "\
-                f"and strftime('%M', record_time)%{granularity_level}=0 "\
                 f"order by record_time"
         disk_data=db.query_all(sql, (i, ))
-        for j in disk_data:
-            total=format_size(j[2])
-            used=format_size(j[3])
-            used_percent=f"{j[4]}%"
-            avail=format_size(j[5])
-            table.add_row((j[0], i, j[1], total, used, used_percent, avail))
+        for index, item in enumerate(disk_data):
+            if index%disk_granularity_level==0 or index==0:
+                total=format_size(item[2])
+                used=format_size(item[3])
+                used_percent=f"{item[4]}%"
+                avail=format_size(item[5])
+                table.add_row((item[0], i, item[1], total, used, used_percent, avail))
         printf(f"{i}磁盘统计:")
         printf(table)
         printf("*"*100)
@@ -72,67 +74,76 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     # CPU
     logger.logger.info("统计CPU记录信息...")
     printf("CPU统计:")
+    cpu_granularity_level=int(60/int(check_dict['host_check'][1])*granularity_level)
+    cpu_granularity_level=cpu_granularity_level if cpu_granularity_level!=0 else 1
     table=pt.PrettyTable(["记录时间", "CPU核心数", "CPU使用率"])
     sql=f"select record_time, cpu_count, cpu_used_percent from cpu "\
             f"where record_time > datetime('{now_time}', '{modifier}') "\
-            f"and strftime('%M', record_time)%{granularity_level}=0 "\
             f"order by record_time"
     cpu_data=db.query_all(sql)
-    for i in cpu_data:
-        used_percent=f"{i[2]}%"
-        table.add_row((i[0], i[1], used_percent))
+    for index, item in enumerate(cpu_data):
+        if index%cpu_granularity_level==0 or index==0:
+            used_percent=f"{item[2]}%"
+            table.add_row((item[0], item[1], used_percent))
     printf(table)
     printf("*"*100)
 
     # MEM
     logger.logger.info("统计Mem记录信息...")
     printf("内存统计:")
+    mem_granularity_level=int(60/int(check_dict['host_check'][2])*granularity_level)
+    mem_granularity_level=mem_granularity_level if mem_granularity_level!=0 else 1
     table=pt.PrettyTable(["记录时间", "内存大小", "可用(avail)", "已使用", "已使用百分比", "剩余(free)"])
     sql=f"select record_time, total, avail, used, used_percent, free from memory "\
             f"where record_time > datetime('{now_time}', '{modifier}') "\
-            f"and strftime('%M', record_time)%{granularity_level}=0 "\
             f"order by record_time"
     mem_data=db.query_all(sql)
-    for i in mem_data:
-        total=format_size(i[1])
-        avail=format_size(i[2])
-        used=format_size(i[3])
-        used_percent=f"{i[4]}%"
-        free=format_size(i[5])
-        table.add_row((i[0], total, avail, used, used_percent, free))
+    for index, item in enumerate(mem_data):
+        if index%mem_granularity_level==0 or index==0:
+            total=format_size(item[1])
+            avail=format_size(item[2])
+            used=format_size(item[3])
+            used_percent=f"{item[4]}%"
+            free=format_size(item[5])
+            table.add_row((item[0], total, avail, used, used_percent, free))
     printf(table)
     printf("*"*100)
 
     # Swap
     logger.logger.info("统计Swap记录信息...")
     printf("Swap统计:")
+    swap_granularity_level=int(60/int(check_dict['host_check'][3])*granularity_level)
+    swap_granularity_level=swap_granularity_level if swap_granularity_level!=0 else 1
     table=pt.PrettyTable(["记录时间", "Swap大小", "已使用", "已使用百分比", "剩余"])
     sql=f"select record_time, total, used, used_percent, free from swap "\
             f"where record_time > datetime('{now_time}', '{modifier}') "\
-            f"and strftime('%M', record_time)%{granularity_level}=0 "\
             f"order by record_time"
     swap_data=db.query_all(sql)
-    for i in swap_data:
-        total=format_size(i[1])
-        used=format_size(i[2])
-        used_percent=f"{i[3]}%"
-        free=format_size(i[4])
-        table.add_row((i[0], total, used, used_percent, free))
+    for index, item in enumerate(swap_data):
+        if index%swap_granularity_level==0 or index==0:
+            total=format_size(item[1])
+            used=format_size(item[2])
+            used_percent=f"{item[3]}%"
+            free=format_size(item[4])
+            table.add_row((item[0], total, used, used_percent, free))
     printf(table)
     printf("*"*100)
 
     # Tomcat
-    if check_dict["tomcat_check"]=="1":
+    if check_dict["tomcat_check"][0]=="1":
         logger.logger.info("统计Tomcat记录信息...")
         printf("Tomcat统计:")
+        tomcat_granularity_level=int(60/int(check_dict['tomcat_check'][1])*granularity_level)
+        tomcat_granularity_level=tomcat_granularity_level if tomcat_granularity_level!=0 else 1
         version=db.query_one("select version from tomcat_java_version")[0]
         printf(f"Java版本: {version}")
         printf("*"*100)
-        sql="select distinct port from tomcat_constant"
-        tomcat_ports=db.query_all(sql)
+        #sql="select distinct port from tomcat_constant"
+        #tomcat_ports=db.query_all(sql)
+        tomcat_ports=conf.get("tomcat", "tomcat_port")[0].split(",")
         tomcat_constant_data=[]
         for i in tomcat_ports:
-            port=i[0]
+            port=int(i.strip())
             constant_sql=f"select record_time, pid, port, boot_time, cmdline from tomcat_constant "\
                     f"where port=? "\
                     f"and '{now_time}' >= record_time "\
@@ -140,36 +151,36 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             variable_sql=f"select record_time, pid, men_used, mem_used_percent, connections, threads_num from tomcat_variable "\
                     f"where port=? "\
                     f"and record_time > datetime('{now_time}', '{modifier}') "\
-                    f"and strftime('%M', record_time)%{granularity_level}=0 "\
                     f"order by record_time"
             if version=="8":
                 jvm_sql=f"select record_time, S0, S1, E, O, M, CCS, YGC, YGCT, FGC, FGCT, GCT from tomcat_jstat8 "\
                         f"where port=? "\
                         f"and record_time > datetime('{now_time}', '{modifier}') "\
-                        f"and strftime('%M', record_time)%{granularity_level}=0 "\
                         f"order by record_time"
                 jvm_table=pt.PrettyTable(["记录时间", "S0", "S1", "E", "O", "M", "CCS", "YGC", "YGCT", "FGC", "FGCT", "GCT"])
             elif version=="7":
                 jvm_sql=f"select record_time, S0, S1, E, O, P, YGC, YGCT, FGC, FGCT, GCT from tomcat_jstat7 "\
                         f"where port=? "\
                         f"and record_time > datetime('{now_time}', '{modifier}') "\
-                        f"and strftime('%M', record_time)%{granularity_level}=0 "\
                         f"order by record_time"
                 jvm_table=pt.PrettyTable(["记录时间", "S0", "S1", "E", "O", "P", "YGC", "YGCT", "FGC", "FGCT", "GCT"])
+
             constant_table=pt.PrettyTable(["记录时间", "Pid", "端口", "启动时间", "启动参数"])
             tomcat_constant_data=(db.query_one(constant_sql, (port, )))
             constant_table.add_row(tomcat_constant_data)
 
             variable_table=pt.PrettyTable(["记录时间", "Pid", "内存使用", "内存使用率", "连接数", "线程数"])
             tomcat_variable_data=(db.query_all(variable_sql, (port, )))
-            for i in tomcat_variable_data:
-                mem_used=format_size(i[2])
-                mem_used_percent=f"{i[3]:.2f}%"
-                variable_table.add_row((i[0], i[1], mem_used, mem_used_percent, i[4], i[5]))
+            for index, item in enumerate(tomcat_variable_data):
+                if index%tomcat_granularity_level==0 or index==0:
+                    mem_used=format_size(item[2])
+                    mem_used_percent=f"{item[3]:.2f}%"
+                    variable_table.add_row((item[0], item[1], mem_used, mem_used_percent, item[4], item[5]))
 
             tomcat_jvm_data=(db.query_all(jvm_sql, (port, )))
-            for i in tomcat_jvm_data:
-                jvm_table.add_row(i)
+            for index, item in enumerate(tomcat_jvm_data):
+                if index%tomcat_granularity_level==0 or index==0:
+                    jvm_table.add_row(item)
 
             printf(f"Tomcat({port})统计信息:")
             printf("启动信息:")
@@ -181,9 +192,11 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             printf("*"*100)
 
     # Redis
-    if check_dict["redis_check"]=="1":
+    if check_dict["redis_check"][0]=="1":
         logger.logger.info("统计Redis记录信息...")
         printf("Redis统计:")
+        redis_granularity_level=int(60/int(check_dict['redis_check'][1])*granularity_level)
+        redis_granularity_level=redis_granularity_level if redis_granularity_level!=0 else 1
         printf("*"*100)
 
         constant_sql=f"select record_time, pid, port, boot_time from redis_constant "\
@@ -191,7 +204,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
                 f"order by record_time desc"
         variable_sql=f"select record_time, pid, mem_used, mem_used_percent, connections, threads_num from redis_variable "\
                 f"where record_time > datetime('{now_time}', '{modifier}') "\
-                f"and strftime('%M', record_time)%{granularity_level}=0 "\
                 f"order by record_time"
 
         # 启动信息
@@ -202,10 +214,11 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         # 运行信息
         variable_table=pt.PrettyTable(["记录时间", "Pid", "内存使用", "内存使用率", "连接数", "线程数"])
         variable_data=(db.query_all(variable_sql))
-        for i in variable_data:
-            mem_used=format_size(i[2])
-            mem_used_percent=f"{i[3]:.2f}%"
-            variable_table.add_row((i[0], i[1], mem_used, mem_used_percent, i[4], i[5]))
+        for index, item in enumerate(variable_data):
+            if index%tomcat_granularity_level==0 or index==0:
+                mem_used=format_size(item[2])
+                mem_used_percent=f"{item[3]:.2f}%"
+                variable_table.add_row((item[0], item[1], mem_used, mem_used_percent, item[4], item[5]))
 
         # master_slave信息
         role=db.query_one("select role from redis_role")[0]
@@ -353,77 +366,18 @@ def show():
         hour, minute=send_time.split(":")
 
         check_dict={
-                "tomcat_check": conf.get("tomcat", "check")[0], 
-                "redis_check": conf.get("redis", "check")[0], 
-                "mysql_check": conf.get("mysql", "check")[0], 
-                "oracle_check": conf.get("oracle", "check")[0],
+                "host_check": conf.get("host", "disk_interval", "cpu_interval", "memory_interval", "swap_interval"), 
+                "tomcat_check": conf.get("tomcat", "check", "tomcat_interval"), 
+                "redis_check": conf.get("redis", "check", "redis_interval"), 
+                "mysql_check": conf.get("mysql", "check", "mysql_interval"), 
+                "oracle_check": conf.get("oracle", "check", "oracle_interval"),
                 "backup_check": conf.get("backup", "check")[0]
                 }
 
         scheduler=BlockingScheduler()
         #scheduler.add_job(resource_show, 'cron', args=[granularity_level, sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
-        scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
-        '''
-        scheduler.add_job(host.disk_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='disk_ana')
-        scheduler.add_job(host.cpu_analysis, 'interval', args=[logger, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='cpu_ana')
-        scheduler.add_job(host.memory_analysis, 'interval', args=[logger, warning_percent, warning_interval, sender_alias, receive, subject], seconds=30, id='mem_ana')
-        # tomcat资源
-        tomcat_check=conf.get("tomcat", "check")[0]
-        if tomcat_check=='1':
-            logger.logger.info("开始分析Tomcat资源信息...")
-            scheduler.add_job(tomcat.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='tomcat_run_ana')
-            scheduler.add_job(tomcat.jvm_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='tomcat_jvm_ana')
-
-        # redis资源
-        redis_check=conf.get("redis", "check")[0]
-        if redis_check=="1":
-            logger.logger.info("开始分析Redis资源信息...")
-            scheduler.add_job(redis.analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='redis_ana')
-
-        # 记录mysql
-        mysql_check, seconds_behind_master=conf.get("mysql", "check", "seconds_behind_master")
-        if mysql_check=="1":
-            logger.logger.info("开始分析MySQL资源信息...")
-            scheduler.add_job(mysql.running_analysis, 'interval', args=[log_file, log_level, warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_run_ana')
-            scheduler.add_job(mysql.master_slave_analysis, 'interval', args=[log_file, log_level, int(seconds_behind_master), warning_interval, sender_alias, receive, subject], seconds=31, id='mysql_slave_ana')
-
-        # 记录Oracle
-        oracle_check=conf.get("oracle", "check")[0]
-        if oracle_check=="1":
-            logger.logger.info("开始分析Oracle信息...")
-            scheduler.add_job(oracle.tablespace_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=31, id='oracle_tablespace_ana')
-        # backup
-        backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
-                "check", 
-                "dir", 
-                "regular", 
-                "cron_time"
-                )
-        if backup_check=="1":
-            logger.logger.info("开始记录备份信息...")
-            dir_list=[]
-            for i in backup_dir.split(","):
-                dir_list.append(i.strip())
-
-            regular_list=[]
-            for i in backup_regular.split(","):
-                regular_list.append(i.strip())
-
-            cron_time_list=[]
-            for i in backup_cron_time.split(","):
-                cron_time_list.append(i.strip())
-
-            for i in range(len(dir_list)):
-                directory=dir_list[i]
-                regular=regular_list[i]
-                cron_time=cron_time_list[i].split(":")
-                hour=cron_time[0].strip()
-                minute=cron_time[1].strip()
-                scheduler.add_job(backup.record, 'cron', args=[logger, directory, regular], day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
-
-
-
-        '''
+        #scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
+        scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
         scheduler.start()
     
 if __name__ == "__main__":
