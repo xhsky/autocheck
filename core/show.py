@@ -20,6 +20,11 @@ def tar_report():
     report_file=f"report-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz"
     with tarfile.open(report_file, "w:gz") as tar:
         tar.add("./report")
+        error_file="./logs/errors.log"
+        if os.path.getsize(error_file) > 0:
+            tar.add(error_file)
+            with open(error_file, "w", encoding="utf8") as error_f:
+                error_f.truncate()
         return report_file
 
 def resource_show(hostname, check_dict, granularity_level, sender_alias, receive, subject):
