@@ -4,6 +4,7 @@
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from lib import log, conf, database
+import datetime
 
 def clean_data(logger, keep_days):
     logger.logger.info("开始清理数据...")
