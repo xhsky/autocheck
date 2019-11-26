@@ -61,12 +61,11 @@ def analysis():
     if oracle_check=="1":
         logger.logger.info("开始分析Oracle信息...")
         scheduler.add_job(oracle.tablespace_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='oracle_tablespace_ana')
-    '''
+
     # backup
-    backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
+    backup_check, backup_dir, backup_cron_time=conf.get("backup",
             "check", 
             "dir", 
-            "regular", 
             "cron_time"
             )
     if backup_check=="1":
@@ -75,25 +74,17 @@ def analysis():
         for i in backup_dir.split(","):
             dir_list.append(i.strip())
 
-        regular_list=[]
-        for i in backup_regular.split(","):
-            regular_list.append(i.strip())
-
         cron_time_list=[]
         for i in backup_cron_time.split(","):
             cron_time_list.append(i.strip())
 
         for i in range(len(dir_list)):
             directory=dir_list[i]
-            regular=regular_list[i]
             cron_time=cron_time_list[i].split(":")
             hour=cron_time[0].strip()
             minute=cron_time[1].strip()
-            scheduler.add_job(backup.record, 'cron', args=[logger, directory, regular], day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
+            scheduler.add_job(backup.analysis, 'cron', args=[log_file, log_level, directory, warning_interval, sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute)+1, id=f'backup{i}_ana')
 
-
-
-    '''
     scheduler.start()
     
 if __name__ == "__main__":

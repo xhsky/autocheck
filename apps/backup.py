@@ -2,10 +2,9 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import database, log
+from lib import database, log, warning, mail
 #from lib.printf import printf
-#from lib.tools import format_size
-#import os, time
+from lib.tools import format_size
 import os, datetime
 
 '''
@@ -89,28 +88,39 @@ def record(log_file, log_level, directory, regular):
     sql="insert into backup values(?, ?, ?, ?, ?)"
     db.update_all(sql, backup_info)
 
-def analysis(backup_dirs_dict):
+def analysis(log_file, log_level, directory, warning_interval, sender_alias, receive, subject):
     """对备份文件进行预警
     1. 备份目录不存在则提示
     2. 当天的备份文件未生成则提示
     3. 当天的备份文件小于上一个的大小的99%则提示
     """
-    now_date=time.time()
-    for i in backup_dirs_dict:
-        if backup_dirs_dict[i] is not None:
-            backup_dir_list=sorted(backup_dirs_dict[i].items(), key=lambda d:d[1][1])
-            last_date=backup_dir_list[-1][1][1]
+    logger=log.Logger(log_file, log_level)
+    db=database.db()
+    logger.logger.debug("分析备份文件...")
+    #sql=f"select record_time, name, used_percent, mounted from disk where record_time=(select max(record_time) from disk)"
+    sql="select record_time, directory, filename, size, ctime from backup where directory=? order by record_time, ctime desc limit 2"
+    data=db.query_all(sql, (directory, ))
+    now_time=datetime.datetime.now().strftime("%Y-%m-%d")
 
-            if time.strftime('%Y-%m-%d', time.localtime(last_date))!=time.strftime('%Y-%m-%d', time.localtime(now_date)):
-                printf(f"备份({i})下未生成今天的备份.", 1)
-            else:
-                if len(backup_dir_list) > 1:
-                    if backup_dir_list[-1][1][0] < backup_dir_list[-2][1][0] * 0.99:
-                        printf(f"备份({i})下今天的备份文件({format_size(backup_dir_list[-1][1][0])})与之前的备份文件({format_size(backup_dir_list[-2][1][0])})相差较大.", 1)
-                    else:
-                        printf(f"备份({i})正常.", 1)
-        else:
-            printf(f"备份目录{i}或指定结尾文件不存在.", 1)
+    if len(data) < 2:
+        if data[1][2] is None:
+            flag=1
+            value="dir_is_None"
+            warning_msg=f"备份预警:\n备份目录({directory})不存在"
+    else:
+        flag=0                 # 是否有预警信息
+        if now_time not in data[0][4]:
+            flag=1
+            warning_msg=f"备份预警:\n备份目录({directory})当天备份文件未生成"
+            value="file_is_None"
+        elif  data[0][3] < data[1][3] * 0.99:
+            flag=1
+            warning_msg=f"备份预警:\n备份目录({directory})当天备份文件({format_size(data[0][3])})与上一次({format_size(data[1][3])})相比相差较大"
+            value="file_is_small"
+
+        warning_flag=warning.warning(logger, db, flag, f"backup {directory}", value, warning_interval)
+        if warning_flag:
+            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f"{directory}_{value}")
 
 if __name__ == "__main__":
     main()
