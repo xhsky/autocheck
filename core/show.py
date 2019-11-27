@@ -7,21 +7,25 @@ from lib import log, conf, mail, database
 from lib.tools import format_size, printf
 import datetime, os
 import prettytable as pt
-from apps import oracle
-import tarfile
+from apps import oracle, mysql
+import tarfile, shutil
 
-def tar_report():
+def tar_report(logger, report_dir):
     """巡检报告打包
     """
     report_files=os.listdir(".")
     for report_file in report_files:
-        if report_file.startswith("report") and report_file.endswith("tar.gz"):
+        if report_file.startswith(report_dir) and report_file.endswith("tar.gz"):
             os.remove(report_file)
-    report_file=f"report-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz"
+    report_file=f"{report_dir}-{datetime.datetime.now().strftime('%Y%m%d%H%M')}.tar.gz"
     with tarfile.open(report_file, "w:gz") as tar:
-        tar.add("./report")
-        error_file="./logs/errors.log"
+        for i in os.listdir(report_dir):
+            filename=f"{report_dir}/{i}"
+            if os.path.getsize(filename) > 0:
+                tar.add(filename)
+        error_file="logs/errors.log"
         if os.path.getsize(error_file) > 0:
+            logger.logger.error(f"有错误日志产生: {error_file}")
             tar.add(error_file)
             with open(error_file, "w", encoding="utf8") as error_f:
                 error_f.truncate()
@@ -35,8 +39,9 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     modifier="-24 hour"
 
     # 重置统计文件
-    os.makedirs("./report",  exist_ok=True)
-    printf("清空文件", 1)
+    report_dir="report"
+    shutil.rmtree(report_dir)
+    os.makedirs(report_dir,  exist_ok=True)
 
     logger.logger.info("统计资源记录信息...")
 
@@ -279,9 +284,11 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             printf("*"*100)
 
     # MySQL
-    if check_dict["mysql_check"]=="1":
+    if check_dict["mysql_check"][0]=="1":
         logger.logger.info("统计MySQL记录信息...")
         printf("MySQL统计:")
+        mysql_granularity_level=int(60/int(check_dict['mysql_check'][1])*granularity_level)
+        mysql_granularity_level=mysql_granularity_level if mysql_granularity_level!=0 else 1
         printf("*"*100)
 
         constant_sql=f"select record_time, pid, port, boot_time from mysql_constant "\
@@ -289,7 +296,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
                 f"order by record_time desc"
         variable_sql=f"select record_time, pid, mem_used, mem_used_percent, connections, threads_num from mysql_variable "\
                 f"where record_time > datetime('{now_time}', '{modifier}') "\
-                f"and strftime('%M', record_time)%{granularity_level}=0 "\
                 f"order by record_time"
 
         # 启动信息
@@ -300,10 +306,11 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         # 运行信息
         variable_table=pt.PrettyTable(["记录时间", "Pid", "内存使用", "内存使用率", "连接数", "线程数"])
         variable_data=(db.query_all(variable_sql))
-        for i in variable_data:
-            mem_used=format_size(i[2])
-            mem_used_percent=f"{i[3]:.2f}%"
-            variable_table.add_row((i[0], i[1], mem_used, mem_used_percent, i[4], i[5]))
+        for index, item in enumerate(variable_data):
+            if index%mysql_granularity_level==0 or index==0:
+                mem_used=format_size(item[2])
+                mem_used_percent=f"{item[3]:.2f}%"
+                variable_table.add_row((item[0], item[1], mem_used, mem_used_percent, item[4], item[5]))
 
         # master_slave信息
         role=db.query_one("select role from mysql_role")[0]
@@ -328,7 +335,19 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         printf(f"当前角色: {role}")
         printf(master_slave_table)
         printf("*"*100)
-    
+
+        # 慢日志
+        printf("慢日志信息:")
+        mysql_user, mysql_ip, mysql_port, mysql_password=conf.get("mysql", 
+                "mysql_user",
+                "mysql_ip",
+                "mysql_port",
+                "mysql_password"
+                )
+        mysql_flag, msg=mysql.export_slow_log(logger, mysql_user, mysql_ip, mysql_password, mysql_port, f"{report_dir}/slow_analysis.log", f"{report_dir}/slow.log")
+        printf(msg)
+        printf("*"*100)
+
     # Oracle表空间
     if check_dict["oracle_check"][0]=="1":
         logger.logger.info("统计Oracle表空间记录信息...")
@@ -370,13 +389,15 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     end_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     printf(f"统计结束时间: {end_time}")
 
-    tar_file=tar_report()
+    tar_file=tar_report(logger, report_dir)
     sender_alias, receive, subject=conf.get("mail",
             "sender",
             "receive",
             "subject"
             )
     warning_msg="\n请查看统计报告."
+    if mysql_flag==1:
+        warning_msg=f"{warning_msg}\n\n该附件存在MySQL慢日志"
     mail.send(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
 
 def show():
@@ -404,10 +425,9 @@ def show():
                 }
 
         scheduler=BlockingScheduler()
-        #scheduler.add_job(resource_show, 'cron', args=[granularity_level, sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
-        #scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
-        scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
+        scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
+        #scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
         scheduler.start()
-    
+        
 if __name__ == "__main__":
     main()
