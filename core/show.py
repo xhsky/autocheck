@@ -379,7 +379,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         logger.logger.info("生成awr报告...")
         printf("awr报告信息:")
         awr_hours=conf.get("oracle", "awr_hours")[0]
-        if oracle.generate_awr(int(awr_hours))==0:
+        if oracle.generate_awr(int(awr_hours), report_dir)==0:
             printf("请在附件中查看awr.html文件")
         else:
             printf("生成awr报告失败, 请自行手动生成")
@@ -425,8 +425,8 @@ def show():
                 }
 
         scheduler=BlockingScheduler()
-        scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
-        #scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
+        #scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
+        scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
         scheduler.start()
         
 if __name__ == "__main__":

@@ -89,7 +89,6 @@ create table if not exists mysql_slave(record_time text not null, pid int, maste
 create table if not exists mysql_role(record_time text, role varchar(12));
 insert into mysql_role values("Null", "master");
 
-
 -- oracle
 create table if not exists oracle(record_time text not null, tablespace_name, size float, used float, used_percent float, free float, primary key(record_time, tablespace_name))
 

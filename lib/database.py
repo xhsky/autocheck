@@ -28,22 +28,18 @@ class db(object):
         return self.cur.fetchall()
 
     def update_all(self, sql, condition=None):
-        #print(f'start: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
         if condition is None:
             self.cur.execute(sql)
         else:
             self.cur.executemany(sql, condition)
         self.conn.commit()
-        #print(f'end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
     def update_one(self, sql, condition=None):
-        #print(f'start: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
         if condition is None:
             self.cur.execute(sql)
         else:
             self.cur.execute(sql, condition)
         self.conn.commit()
-        #print(f'end: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     
     def close(self):
         self.__del__()

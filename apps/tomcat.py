@@ -2,20 +2,12 @@
 # *-* coding:utf8 *-*
 # sky
 
-#from lib.printf import printf
-#from lib import conf, tools
 from lib import database, mail, log, warning, tools
 import psutil
 import datetime
 import subprocess
 import os
 
-'''
-def jstat(pid):
-    cmd=f"jstat -gcutil {pid} 1000 10"
-    (status, message)=subprocess.getstatusoutput(cmd)
-    return message
-'''
 def running_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
     logger=log.Logger(log_file, log_level)
     logger.logger.debug("开始分析Tomcat运行情况...")
@@ -81,7 +73,6 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
             warning_msg=f"Tomcat预警:\nTomcat({port})FGC平均时间为{fgc_time}\n"
             mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{port}_fgc')
 
-
 def record(log_file, log_level, tomcat_port_list):
     logger=log.Logger(log_file, log_level)
     db=database.db()
@@ -90,77 +81,11 @@ def record(log_file, log_level, tomcat_port_list):
     for port in tomcat_port_list:
         tomcat_port_and_pid[port]=tools.find_pid(int(port))
 
-    #tomcat_port_and_pid=find_tomcat_pids(tomcat_port_list)       # 获取Tomcat端口与pid对应的字典
-    #logger.logger.debug(f"Tomcat Port and Pid: {tomcat_port_and_pid}")
-
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for i in tomcat_port_and_pid:                # 根据pid获取相应信息
         pid=tomcat_port_and_pid[i]
         port=i
         logger.logger.debug(f"记录Tomcat({port})资源")
-
-        ''' 判断constant表有无相同数据再插入
-        if pid==0:
-            logger.logger.error(f"Tomcat({port})未运行")
-            tomcat_create_time="0"
-            #sql="select boot_time from tomcat_constant where port=? and pid=? order by record_time desc limit 1"
-            sql="select pid from tomcat_constant where port=? order by record_time desc"
-            pid_in_db=db.query_one(sql, (port,))
-            if pid_in_db is None or pid_in_db[0]!=0:
-                sql="insert into tomcat_constant(record_time, pid, port, boot_time) values(?, ?, ?, ?)"
-                db.update_one(sql, (record_time, pid, port, "0"))
-        else:
-            tomcat_info=psutil.Process(pid).as_dict()
-            tomcat_create_time=datetime.datetime.fromtimestamp(tomcat_info["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
-            sql="select boot_time, pid from tomcat_constant where port=? order by record_time desc"
-            data=db.query_one(sql, (port, ))
-            if data is None or data[0]!=tomcat_create_time or data[1]!=pid:
-                tomcat_cmdline=",".join(tomcat_info["cmdline"])
-                constant_data=(record_time, pid, port, tomcat_create_time, tomcat_cmdline)
-                constant_sql="insert into tomcat_constant values(?, ?, ?, ?, ?)"
-                db.update_one(constant_sql, constant_data)
-
-            tomcat_memory_percent=tomcat_info['memory_percent']
-            tomcat_memory=psutil.virtual_memory()[0] * tomcat_info['memory_percent'] / 100
-            tomcat_connections=len(tomcat_info["connections"])
-            tomcat_num_threads=tomcat_info["num_threads"]
-            variable_data=(record_time, pid, tomcat_memory, tomcat_memory_percent, tomcat_connections, tomcat_num_threads)
-            variable_sql="insert into tomcat_variable values(?, ?, ?, ?, ?, ?)"
-            db.update_one(variable_sql, variable_data)
-
-
-            # 内存回收
-            logger.logger.debug(f"记录Tomcat({port})Jvm信息")
-            cmd=f"jstat -gcutil {pid}"
-            (status, message)=subprocess.getstatusoutput(cmd)
-            message=message.splitlines()
-            header=message[0].split()
-            if len(header)==11:             # jdk8
-                fields=["S0", "S1", "E", "O", "M", "CCS", "YGC", "YGCT", "FGC", "FGCT", "GCT", "record_time", "pid"]
-                sql=f"insert into tomcat_jstat8({','.join(fields)}) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                java_version=8
-            else:                           # jdk7
-                fields=["S0", "S1", "E", "O", "P", "YGC", "YGCT", "FGC", "FGCT", "GCT", "record_time", "pid"]
-                sql=f"insert into tomcat_jstat7({','.join(fields)}) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                java_version=7
-
-            java_version_sql="update tomcat_java_version set version=?"
-            db.update_one(java_version_sql, (java_version, ))        # 将java的版本写入数据库
-            logger.logger.debug(f"java version: {java_version}")
-
-            data_index_list=[]                      # 按照fields的顺序从header中获取字段索引 
-            for i in fields[:-2]:
-                index=header.index(i)
-                data_index_list.append(index)
-
-            data_list=[]                            # 将jstat的数据按照data_index_list中的索引顺序放到data_list中
-            data=message[1].split()
-            for i in data_index_list:
-                data_list.append(data[i])
-            else:
-                data_list.extend([record_time, pid])
-            db.update_one(sql, data_list)
-        '''
         if pid==0:
             logger.logger.error(f"Tomcat({port})未运行")
             sql="insert into tomcat_constant(record_time, pid, port, boot_time) values(?, ?, ?, ?)"
@@ -168,9 +93,6 @@ def record(log_file, log_level, tomcat_port_list):
         else:
             tomcat_info=psutil.Process(pid).as_dict()
             tomcat_create_time=datetime.datetime.fromtimestamp(tomcat_info["create_time"]).strftime("%Y-%m-%d %H:%M:%S")
-            #sql="select boot_time, pid from tomcat_constant where port=? order by record_time desc"
-            #data=db.query_one(sql, (port, ))
-            #if data is None or data[0]!=tomcat_create_time or data[1]!=pid:
             tomcat_cmdline=",".join(tomcat_info["cmdline"])
             constant_data=(record_time, pid, port, tomcat_create_time, tomcat_cmdline)
             constant_sql="insert into tomcat_constant values(?, ?, ?, ?, ?)"

@@ -3,66 +3,8 @@
 # sky
 
 from lib import database, log, warning, mail
-#from lib.printf import printf
 from lib.tools import format_size
 import os, datetime
-
-'''
-def show(backup_dirs_dict):
-    for i in backup_dirs_dict:
-        printf(f"{i}目录:")
-        if backup_dirs_dict[i] is not None:
-            backup_dir_list=sorted(backup_dirs_dict[i].items(), key=lambda d:d[1][1])
-            for j in backup_dir_list:
-                size=os.path.getsize(j[0])
-                ctime=os.path.getctime(j[0])
-                printf(f"文件名: {j[0]}, 大小: {format_size(size)}, 创建时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ctime))}")
-        else:
-            printf("该目录或指定结尾文件不存在.")
-        printf("*"*40)
-
-
-def collect(backup_dict):
-    """收集信息
-    """
-    backup_dirs_dict={}
-    for i in backup_dict:
-        backup_dir_dict={}
-        if os.path.exists(i):
-            flag=0
-            for j in os.listdir(i):
-                filename=f"{i}/{j}"
-                if os.path.isfile(filename) and filename.endswith(backup_dict[i]):
-                    size=os.path.getsize(filename)
-                    ctime=os.path.getctime(filename)
-                    backup_dir_dict[filename]=(size, ctime)
-                    flag=1
-            if flag==0:
-                backup_dir_dict=None
-        else:
-            backup_dir_dict=None
-        backup_dirs_dict[i]=backup_dir_dict
-    return backup_dirs_dict
-
-def cat():
-    if check=="1":
-        if directory is not None:
-            dir_list=[]
-            for i in directory.split(","):
-                dir_list.append(i.strip())
-
-            regular_list=[]
-            for i in regular.split(","):
-                regular_list.append(i.strip())
-
-            backup_dict=dict(zip(dir_list, regular_list))
-            backup_dirs_dict=collect(backup_dict)           # 收集
-            show(backup_dirs_dict)                          # 显示
-            analysis(backup_dirs_dict)                      # 分析
-        else:
-            printf("[backup]下未定义dir")
-        printf("-"*80)
-'''
 
 def record(log_file, log_level, directory, regular):
     logger=log.Logger(log_file, log_level)

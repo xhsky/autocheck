@@ -60,7 +60,6 @@ def send(logger, mail_body, sender_alias, receive, subject, msg=None, attachment
             logger.logger.info(f"发送{msg}相关预警邮件")
         elif flag==1:
             logger.logger.info(f"发送资源统计邮件")
-            msg="report"
 
     except Exception as e:
         logger.logger.error(f"邮件发送失败: {e}")
