@@ -29,7 +29,7 @@ def clean():
     keep_days=conf.get("autocheck", "keep_days")[0]
 
     scheduler=BlockingScheduler()
-    scheduler.add_job(clean_data, 'cron', args=[logger, int(keep_days)], day_of_week='0-6', hour=1, minute=05, id=f'clean')
+    scheduler.add_job(clean_data, 'cron', args=[logger, int(keep_days)], day_of_week='0-6', hour=1, minute=10, id=f'clean')
     scheduler.start()
     
 if __name__ == "__main__":
