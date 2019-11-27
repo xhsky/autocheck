@@ -12,8 +12,13 @@ def clean_data(logger, keep_days):
     all_tables=db.query_all("select name from sqlite_master where type='table'")
     now_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for i in all_tables:
-        sql=f"delete from {i} where record_time < datetime({now_time}, '-{keep_days} day')"
-        db.update_one(sql)
+        table=i[0]
+        sql=f"pragma table_info('{table}')"
+        columns=db.query_all(sql)
+        for j in columns:
+            if j[1]=="record_time":
+                sql=f"delete from {table} where record_time < datetime('{now_time}', '-{keep_days} day')"
+                db.update_one(sql)
     logger.logger.info("结束清理数据...")
 
 def clean():
@@ -24,7 +29,7 @@ def clean():
     keep_days=conf.get("autocheck", "keep_days")[0]
 
     scheduler=BlockingScheduler()
-    scheduler.add_job(clean_data, 'cron', args=[logger, int(keep_days)], day_of_week='0-6', hour=1, minute=10, id=f'clean')
+    scheduler.add_job(clean_data, 'cron', args=[logger, int(keep_days)], day_of_week='0-6', hour=11, minute=28, id=f'clean')
     scheduler.start()
     
 if __name__ == "__main__":
