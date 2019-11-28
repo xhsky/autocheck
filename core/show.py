@@ -37,6 +37,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     db=database.db()
     now_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     modifier="-24 hour"
+    message=None
 
     # 重置统计文件
     report_dir="report"
@@ -345,6 +346,8 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
                 "mysql_password"
                 )
         mysql_flag, msg=mysql.export_slow_log(logger, mysql_user, mysql_ip, mysql_password, mysql_port, f"{report_dir}/slow_analysis.log", f"{report_dir}/slow.log")
+        if mysql_flag==1:
+            message=f"该附件存在MySQL慢日志"
         printf(msg)
         printf("*"*100)
 
@@ -395,9 +398,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             "receive",
             "subject"
             )
-    warning_msg="\n请查看统计报告."
-    if mysql_flag==1:
-        warning_msg=f"{warning_msg}\n\n该附件存在MySQL慢日志"
+    warning_msg=f"\n请查看统计报告.\n\n{message}"
     mail.send(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
 
 def show():
