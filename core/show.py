@@ -40,7 +40,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
 
     # 重置统计文件
     report_dir="report"
-    shutil.rmtree(report_dir)
+    shutil.rmtree(report_dir, ignore_errors=True)
     os.makedirs(report_dir,  exist_ok=True)
 
     logger.logger.info("统计资源记录信息...")
