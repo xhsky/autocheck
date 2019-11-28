@@ -37,7 +37,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     db=database.db()
     now_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     modifier="-24 hour"
-    message=None
+    message=""
 
     # 重置统计文件
     report_dir="report"
@@ -398,6 +398,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             "receive",
             "subject"
             )
+
     warning_msg=f"\n请查看统计报告.\n\n{message}"
     mail.send(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
 
