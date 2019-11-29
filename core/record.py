@@ -3,6 +3,7 @@
 # sky
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
 from lib import log, conf
 from apps import host, tomcat, redis, backup, mysql, oracle
 import datetime
@@ -12,7 +13,17 @@ def record():
     logger=log.Logger(log_file, log_level)
     logger.logger.info("开始采集资源信息...")
 
-    scheduler=BlockingScheduler()
+    max_threads=20
+    executors = {
+            "default": ThreadPoolExecutor(max_threads)
+            }
+    job_defaults = {
+            "coalesce": True, 
+            "max_instances": 1,  
+            "misfire_grace_time": 3, 
+            }
+    scheduler=BlockingScheduler(job_defaults=job_defaults, executors=executors) 
+
     min_value=10
 
     # host资源记录
@@ -36,15 +47,15 @@ def record():
         boot_time_interval=min_value
 
     logger.logger.info("开始采集磁盘资源信息...")
-    scheduler.add_job(host.disk_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(disk_interval), id='disk_record')
+    scheduler.add_job(host.disk_record, 'interval', args=[log_file, log_level], seconds=int(disk_interval), id='disk_record')
     logger.logger.info("开始采集CPU资源信息...")
-    scheduler.add_job(host.cpu_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(cpu_interval), id='cpu_record')
+    scheduler.add_job(host.cpu_record, 'interval', args=[log_file, log_level], seconds=int(cpu_interval), id='cpu_record')
     logger.logger.info("开始采集内存资源信息...")
-    scheduler.add_job(host.memory_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(memory_interval), id='memory_record')
+    scheduler.add_job(host.memory_record, 'interval', args=[log_file, log_level], seconds=int(memory_interval), id='memory_record')
     logger.logger.info("开始采集Swap资源信息...")
-    scheduler.add_job(host.swap_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(swap_interval), id='swap_record')
+    scheduler.add_job(host.swap_record, 'interval', args=[log_file, log_level], seconds=int(swap_interval), id='swap_record')
     logger.logger.info("开始采集启动时间资源信息...")
-    scheduler.add_job(host.boot_time_record, 'interval', next_run_time=datetime.datetime.now(), args=[log_file, log_level], seconds=int(boot_time_interval), id='boot_time_record')
+    scheduler.add_job(host.boot_time_record, 'interval', args=[log_file, log_level], seconds=int(boot_time_interval), id='boot_time_record')
 
     # tomcat资源
     tomcat_check, tomcat_interval, tomcat_port=conf.get("tomcat", 
@@ -59,7 +70,7 @@ def record():
             tomcat_port_list.append(i.strip())
         if int(tomcat_interval) < min_value:
             tomcat_interval=min_value
-        scheduler.add_job(tomcat.record, 'interval', args=[log_file, log_level, tomcat_port_list], next_run_time=datetime.datetime.now(), seconds=int(tomcat_interval), id='tomcat_record')
+        scheduler.add_job(tomcat.record, 'interval', args=[log_file, log_level, tomcat_port_list], seconds=int(tomcat_interval), id='tomcat_record')
 
     # redis资源
     redis_check, redis_interval, redis_password, redis_port, sentinel_port, sentinel_name, commands=conf.get("redis", 
@@ -76,7 +87,7 @@ def record():
             redis_interval=min_value
         logger.logger.info("开始采集Redis资源信息...")
         scheduler.add_job(redis.record, 'interval', args=[log_file, log_level, redis_password, redis_port, sentinel_port, sentinel_name, commands], \
-                next_run_time=datetime.datetime.now(), seconds=int(redis_interval), id='redis_record')
+                seconds=int(redis_interval), id='redis_record')
 
     # backup
     backup_check, backup_dir, backup_regular, backup_cron_time=conf.get("backup", 
@@ -105,7 +116,7 @@ def record():
             cron_time=cron_time_list[i].split(":")
             hour=cron_time[0].strip()
             minute=cron_time[1].strip()
-            scheduler.add_job(backup.record, 'cron', args=[log_file, log_level, directory, regular], day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
+            scheduler.add_job(backup.record, 'cron', args=[log_file, log_level, directory, regular], next_run_time=datetime.datetime.now(), day_of_week='0-6', hour=int(hour), minute=int(minute), id=f'backup{i}')
 
     # 记录mysql
     mysql_check, mysql_interval, mysql_user, mysql_ip, mysql_port, mysql_password=conf.get("mysql", 
@@ -120,7 +131,7 @@ def record():
         if int(mysql_interval) < min_value:
             mysql_interval = min_value
         logger.logger.info("开始采集MySQL资源信息...")
-        scheduler.add_job(mysql.record, 'interval', args=[log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port], next_run_time=datetime.datetime.now(), seconds=int(mysql_interval), id='mysql_record')
+        scheduler.add_job(mysql.record, 'interval', args=[log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port], seconds=int(mysql_interval), id='mysql_record')
 
     # 记录Oracle
     oracle_check, oracle_interval=conf.get("oracle", 
@@ -131,7 +142,7 @@ def record():
         if int(oracle_interval) < min_value:
             oracle_interval = min_value
         logger.logger.info("开始记录Oracle信息...")
-        scheduler.add_job(oracle.record, 'interval', args=[log_file, log_level], next_run_time=datetime.datetime.now(), seconds=int(oracle_interval), id='oracle_record')
+        scheduler.add_job(oracle.record, 'interval', args=[log_file, log_level], seconds=int(oracle_interval), id='oracle_record')
 
     scheduler.start()
     
