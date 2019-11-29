@@ -3,6 +3,7 @@
 # sky
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
 from lib import log, conf
 from apps import host, tomcat, redis, backup, mysql, oracle
 
@@ -29,7 +30,16 @@ def analysis():
     if analysis_interval < min_value:
         analysis_interval=min_value
 
-    scheduler=BlockingScheduler()
+    max_threads=20
+    executors = {
+            "default": ThreadPoolExecutor(max_threads)
+            }
+    job_defaults = {
+            "coalesce": True, 
+            "max_instances": 1,  
+            "misfire_grace_time": 3, 
+            }
+    scheduler=BlockingScheduler(job_defaults=job_defaults, executors=executors) 
     # host资源记录
     logger.logger.info("开始分析主机资源信息...")
     scheduler.add_job(host.disk_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=analysis_interval, id='disk_ana')
