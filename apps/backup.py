@@ -50,6 +50,11 @@ def analysis(log_file, log_level, directory, warning_interval, sender_alias, rec
             flag=1
             value="dir_is_None"
             warning_msg=f"备份预警:\n备份目录({directory})不存在"
+        else:
+            if now_time not in data[0][4]:
+                flag=1
+                warning_msg=f"备份预警:\n备份目录({directory})当天备份文件未生成"
+                value="file_is_None"
     else:
         if now_time not in data[0][4]:
             flag=1
