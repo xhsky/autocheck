@@ -51,7 +51,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     printf("-"*100)
     
     # 系统启动时间
-    sql="select boot_time from boot_time"
+    sql="select boot_time from boot_time order by record_time desc"
     boot_time=db.query_one(sql)[0]
     printf(f"系统启动时间: {boot_time}")
     printf("*"*100)

@@ -117,12 +117,16 @@ def boot_time_record(log_file, log_level):
     record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     boot_time=datetime.datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")
 
+    """
     # 判断启动时间是否有变化再插入
     sql="select boot_time from boot_time order by record_time desc limit 1;"
     data=db.query_one(sql)
     if data is None or data[0]!=boot_time:
         sql="insert into boot_time values(?, ?)"
         db.update_one(sql, (record_time, boot_time))
-    
+    """
+    sql="insert into boot_time values(?, ?)"
+    db.update_one(sql, (record_time, boot_time))
+
 if __name__ == "__main__":
     info()

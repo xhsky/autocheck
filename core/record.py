@@ -28,12 +28,11 @@ def record():
 
     # host资源记录
     logger.logger.info("开始采集主机资源信息...")
-    disk_interval, cpu_interval, memory_interval, swap_interval, boot_time_interval=conf.get("host", 
+    disk_interval, cpu_interval, memory_interval, swap_interval=conf.get("host", 
             "disk_interval",
             "cpu_interval",
             "memory_interval",
-            "swap_interval",
-            "boot_time_interval"
+            "swap_interval"
             )
     if int(disk_interval) < min_value:
         disk_interval=min_value
@@ -43,8 +42,6 @@ def record():
         memory_interval=min_value
     if int(swap_interval) < min_value:
         swap_interval=min_value
-    if int(boot_time_interval) < min_value:
-        boot_time_interval=min_value
 
     logger.logger.info("开始采集磁盘资源信息...")
     scheduler.add_job(host.disk_record, 'interval', args=[log_file, log_level], seconds=int(disk_interval), id='disk_record')
@@ -55,7 +52,8 @@ def record():
     logger.logger.info("开始采集Swap资源信息...")
     scheduler.add_job(host.swap_record, 'interval', args=[log_file, log_level], seconds=int(swap_interval), id='swap_record')
     logger.logger.info("开始采集启动时间资源信息...")
-    scheduler.add_job(host.boot_time_record, 'interval', args=[log_file, log_level], seconds=int(boot_time_interval), id='boot_time_record')
+    #scheduler.add_job(host.boot_time_record, 'interval', args=[log_file, log_level], seconds=int(boot_time_interval), id='boot_time_record')
+    host.boot_time_record(log_file, log_level)
 
     # tomcat资源
     tomcat_check, tomcat_interval, tomcat_port=conf.get("tomcat", 

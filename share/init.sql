@@ -8,7 +8,7 @@ insert into status values('host', 'disk_interval', '60', 1);
 insert into status values('host', 'cpu_interval', '30', 1);
 insert into status values('host', 'memory_interval', '30', 1);
 insert into status values('host', 'swap_interval', '360', 1);
-insert into status values('host', 'boot_time_interval', '360', 1);
+--insert into status values('host', 'boot_time_interval', '360', 1);
 insert into status values('logs', 'log_file', './logs/autocheck.log', 1);
 insert into status values('logs', 'log_level', 'info', 1);
 insert into status values('tomcat', 'check', 0, 1);
