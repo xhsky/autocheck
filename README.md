@@ -59,6 +59,7 @@
 - 该项目只支持Python3环境
 - 安装使用的操作必须使用root用户
 - 若要使用tomcat的jvm监控预警, 则root用户下的环境变量中须有jstat命令路径
+
 ### 在线
 - 安装Python3环境和开发工具
 ```
@@ -111,7 +112,7 @@
   warning_percent=95
   # 预警间隔, 单位分钟
   warning_interval=30
-  # 分析间隔, 单位秒. 建议在3-8秒之间
+  # 分析间隔, 单位秒. 建议在3-8秒之间(此分析间隔是在各资源扫描间隔之上相加)
   analysis_interval=5
   # 数据保留天数
   keep_days=3
@@ -206,8 +207,11 @@
 ```
 
 2. 配置完成后执行main.py文件
+	*主程序文件参数包含start, stop, status*
 ```
 # ./main.py start
+程序启动...
+#
 ```
 
 3. 查看运行日志, 无报错信息
