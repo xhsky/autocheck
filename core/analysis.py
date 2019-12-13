@@ -5,7 +5,8 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from lib import log, conf
-from apps import host, tomcat, redis, backup, mysql, oracle
+from apps import host, tomcat, redis, backup, mysql, oracle, user_resource
+import datetime
 
 def analysis():
     log_file, log_level=log.get_log_args()
@@ -53,6 +54,11 @@ def analysis():
     scheduler.add_job(host.disk_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=disk_interval, id='disk_ana')
     scheduler.add_job(host.cpu_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=cpu_interval, id='cpu_ana')
     scheduler.add_job(host.memory_analysis, 'interval', args=[log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject], seconds=memory_interval, id='mem_ana')
+
+    # users_limit
+    logger.logger.info("开始分析用户资源信息...")
+    scheduler.add_job(user_resource.analysis, 'interval', args=[log_file, log_level, 0, sender_alias, receive, subject], next_run_time=datetime.datetime.now()+datetime.timedelta(seconds=15),  minutes=65, id=f'user_limit_ana')
+
     # tomcat资源
     tomcat_check=conf.get("tomcat", "check")[0]
     if tomcat_check=='1':

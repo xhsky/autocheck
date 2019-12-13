@@ -8,6 +8,7 @@ insert into status values('host', 'disk_interval', '60', 1);
 insert into status values('host', 'cpu_interval', '30', 1);
 insert into status values('host', 'memory_interval', '30', 1);
 insert into status values('host', 'swap_interval', '360', 1);
+insert into status values('host', 'users_limit', 'root', 1);
 --insert into status values('host', 'boot_time_interval', '360', 1);
 insert into status values('logs', 'log_file', './logs/autocheck.log', 1);
 insert into status values('logs', 'log_level', 'info', 1);
@@ -94,6 +95,9 @@ create table if not exists oracle(record_time text not null, tablespace_name, si
 
 -- mail
 create table if not exists mail(record_time text not null, sender, receive, msg);
+
+-- user_limit
+create table if not exists users_limit(record_time text not null, user, nofile varchar(12), nproc varchar(12), primary key(record_time, user));
 
 
 

@@ -5,7 +5,7 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from lib import log, conf
-from apps import host, tomcat, redis, backup, mysql, oracle
+from apps import host, tomcat, redis, backup, mysql, oracle, user_resource
 import datetime
 
 def record():
@@ -13,7 +13,7 @@ def record():
     logger=log.Logger(log_file, log_level)
     logger.logger.info("开始采集资源信息...")
 
-    max_threads=20
+    max_threads=50
     executors = {
             "default": ThreadPoolExecutor(max_threads)
             }
@@ -28,11 +28,12 @@ def record():
 
     # host资源记录
     logger.logger.info("开始采集主机资源信息...")
-    disk_interval, cpu_interval, memory_interval, swap_interval=conf.get("host", 
+    disk_interval, cpu_interval, memory_interval, swap_interval, users_limit=conf.get("host", 
             "disk_interval",
             "cpu_interval",
             "memory_interval",
-            "swap_interval"
+            "swap_interval", 
+            "users_limit"
             )
     if int(disk_interval) < min_value:
         disk_interval=min_value
@@ -54,6 +55,16 @@ def record():
     logger.logger.info("开始采集启动时间资源信息...")
     #scheduler.add_job(host.boot_time_record, 'interval', args=[log_file, log_level], seconds=int(boot_time_interval), id='boot_time_record')
     host.boot_time_record(log_file, log_level)
+
+    # 用户资源限制
+    logger.logger.info("开始记录用户限制信息...")
+    if users_limit is not None:
+        users_limit_list=[]
+        for i in users_limit.split(","):
+            users_limit_list.append(i.strip())
+
+        for user in users_limit_list:
+            scheduler.add_job(user_resource.record, 'interval', args=[log_file, log_level, user], next_run_time=datetime.datetime.now()+datetime.timedelta(seconds=5), minutes=60, id=f'{user}_limit')
 
     # tomcat资源
     tomcat_check, tomcat_interval, tomcat_port=conf.get("tomcat", 
