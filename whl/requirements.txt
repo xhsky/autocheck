@@ -3,7 +3,7 @@ configparser==4.0.2
 gevent==1.4.0
 greenlet==0.4.15
 prettytable==0.7.2
-psutil==5.6.3
+psutil==5.6.6
 PyMySQL==0.9.3
 pytz==2019.3
 redis==3.3.10
