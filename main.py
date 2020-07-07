@@ -2,11 +2,12 @@
 # *-* coding:utf8 *-*
 # sky
 
+import gevent 
+from gevent import monkey
+monkey.patch_all()
 from core import record, analysis, show, clean
 from lib import database, log
 import os, sys, atexit, time
-import gevent                                                                                                                                                                 
-from gevent import monkey
 import configparser
 import psutil
 
@@ -21,20 +22,6 @@ def get_config(cfg, section, option):
             return value
     else:
         return None
-
-def init(data_file, init_file):
-    """数据初始化
-    """
-    os.makedirs(os.path.dirname(data_file), exist_ok=True)
-    if os.path.exists(data_file):
-        pass
-    else:
-        logger.logger.info("开始初始化数据.")
-        db=database.db(data_file)
-        with open(init_file, "r") as f:
-            for sql in f.readlines():
-                db.update_one(sql)
-        logger.logger.info("初始化数据完成.")
 
 def config_to_db(config_file):
     """读取配置文件, 将配置写入db
@@ -54,10 +41,14 @@ def config_to_db(config_file):
         value=get_config(cfg, section, option)
         config_list.append((value, section, option))
 
-    logger.logger.debug("将配置文件写入数据库...")
-    sql="update status set value=? where section=? and option=?"
-    db.update_all(sql, config_list)
-    db.close()
+    try:
+        logger.logger.debug("将配置文件写入数据库...")
+        sql="update status set value=? where section=? and option=?"
+        db.update_all(sql, config_list)
+        db.close()
+    except Exception as e:
+        print(f"Error: 配置文件未正常写入数据库({e})")
+        exit()
 
 def daemonize(pid_file, rootdir):
     pid = os.fork()
@@ -90,12 +81,36 @@ def daemonize(pid_file, rootdir):
         atexit.register(os.remove, pid_file)
 
 def main():
-    init("./data/auto.db", "./share/init.sql")
+    # 初始化. 判断是否存数据文件, 若不存在则初始化; 若存在则正常启动
+    data_file="./data/auto.db"
+    if os.path.exists(data_file):
+        pass
+    else:
+        init_file="./share/init.sql"
+        os.makedirs(os.path.dirname(data_file), exist_ok=True)
+        logger.logger.info("开始初始化数据.")
+
+        db=database.db(data_file)
+        with open(init_file, "r") as f:
+            for sql in f.readlines():
+                db.update_one(sql) 
+        logger.logger.info("初始化数据完成.")
+        """
+        try:
+            db=database.db(data_file)
+            with open(init_file, "r") as f:
+                for sql in f.readlines():
+                    db.update_one(sql) 
+            logger.logger.info("初始化数据完成.")
+        except Exception as e:
+            print(f"Error: 初始化失败({e})")
+            exit()
+        """
+
     config_to_db("./conf/autocheck.conf")
     daemonize('logs/autocheck.pid', rootdir)
-    monkey.patch_all()
 
-    check_item=[record.record,  show.show,  analysis.analysis, clean.clean]
+    check_item=[record.record, show.show, analysis.analysis, clean.clean]
     gevent_list=[]
     for i in check_item:
         g=gevent.spawn(i, )
@@ -122,6 +137,23 @@ def control(action, pid=None):
             print("程序未运行...")
         else:
             print(f"程序({pid})正在运行...")
+    elif action=="clean":
+        if pid is not None:
+            print("程序关闭...")
+            logger.logger.info("程序关闭...")
+            os.kill(pid, 9)
+        try:
+            log_dir=os.path.dirname(log_file)
+            for i in os.listdir(log_dir):
+                os.remove(f"{log_dir}/{i}")
+
+            data_file="./data/auto.db"
+            if os.path.exists(data_file):
+                os.remove(data_file)
+            logger.logger.info("Clean...")
+            print("Clean...")
+        except Exception as e:
+            print(f"Clean Error: {e}")
 
 def usage(action):
     pid=get_pid("./logs/autocheck.pid")
@@ -139,6 +171,8 @@ def usage(action):
         control("status", pid)
     elif action=="sendmail":
         pass
+    elif action=="clean":
+        control("clean", pid)
     else:
         usage("usage")
 
