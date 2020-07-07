@@ -1,7 +1,7 @@
 # autocheck
 
 ## 项目说明
-- 用于主机及软件资源的实时监控, 邮件预警及信息统计
+- 用于主机及软件资源的实时监控, 邮件/短信预警及信息统计
 
 ## 功能说明
 ### 实时监控功能
@@ -19,8 +19,10 @@
   - 备份文件, 文件大小, 创建时间
 7. 用户资源限制监控记录
   - nofile, nproc
+8. 文件内容监控
+  - 关键字
 
-### 实时邮件预警功能
+### 实时预警功能
 1. 系统资源预警
   - CPU使用率, 内存使用率, 磁盘使用率
 2. Tomcat预警
@@ -35,6 +37,8 @@
   - 未备份, 备份大小异常
 7. 用户资源限制预警
   - nofile, nproc限制小于5000
+8. 文件内容预警
+  - 是否出现关键字
 
 ### 定时资源统计并邮件发送功能
 1. 系统资源统计
@@ -57,6 +61,8 @@
 ### 说明
 - 该项目已在Centos7版本上测试
 - 该项目只支持Python3环境
+- 邮件正常发送需要保证服务器能访问smtp.dreamdt.cn的25端口
+- 短信正常发送需要保证服务器能访问smartone.10690007.com的80端口
 - 安装使用的操作必须使用root用户
 - 若要使用tomcat的jvm监控预警, 则root用户下的环境变量中须有jstat命令路径
 
@@ -105,105 +111,130 @@
 ```
 # cd autocheck
 # vim conf/autocheck.conf
-  [autocheck]
-  # 定义当前主机的名称
-  hostname=dream
-  # 预警百分比
-  warning_percent=95
-  # 预警间隔, 单位分钟
-  warning_interval=30
-  # 分析间隔, 单位秒. 建议在3-8秒之间(此分析间隔是在各资源扫描间隔之上相加)
-  analysis_interval=5
-  # 数据保留天数
-  keep_days=3
-  
-  [logs]
-  # 日志文件
-  log_file=./logs/autocheck.log
-  # 日志级别
-  log_level=info
-  
-  [host]
-  # 扫描间隔时间, 单位为秒, 最低值为10
-  # 磁盘
-  disk_interval=300
-  # CPU
-  cpu_interval=20
-  # 内存
-  memory_interval=20
-  # Swap
-  swap_interval=300
-  # 查看用户下的资源限制, 多个用户以逗号分隔(该用户需为可登陆用户)
-  users_limit=root, user1, user2
-  
-  [tomcat]
-  # 是否统计Tomcat
-  check=0
-  # 扫描间隔时间, 单位为秒, 最低值为10
-  tomcat_interval=15
-  # 指定Tomcat的端口, 多个Tomcat以逗号分隔
-  tomcat_port=8080, 8081
-  
-  [redis]
-  # 是否统计Redis
-  check=0
-  # 扫描间隔时间, 单位为秒, 最低值为10
-  redis_interval=15
-  # redis的密码
-  password=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  # redis端口
-  redis_port=6379
-  # 若未安装sentinel, 则注释掉下面两项
-  # sentinel端口
-  sentinel_port=26379
-  # sentinel监控的集群名称
-  sentinel_name=mymaster
-  
-  [mysql]
-  # 是否统计MySQL
-  check=0
-  # 扫描间隔时间, 单位为秒, 最低值为10
-  mysql_interval=15
-  # 指定MySQL端口
-  mysql_port=3306
-  # 指定MySQL的root密码
-  mysql_password=xxxxxxxxxx
-  # 指定MySQL主从延迟预警时间, 单位秒
-  seconds_behind_master=5
-  
-  [oracle]
-  # 是否统计Oracle
-  check=0
-  # 扫描间隔时间, 单位为秒, 最低值为10
-  oracle_interval=300
-  # 生成前N个小时的awr报告
-  awr_hours=24
-  
-  [backup]
-  # 是否统计备份
-  check=0
-  # 指定备份文件的目录. 可设置多个, 以,分隔
-  dir=/data, /data2, /data3
-  # 指定备份文件的通用结尾, 多个目录以,分隔
-  regular=tar.gz, tar.gz, tar.gz
-  # 指定每个目录统计的时间(备份完成后的时间), 多个时间以,分隔
-  cron_time=22:05, 23:55, 19:20
-  
-  [send]
-  # 是否发送24小时的统计信息
-  check=1
-  # 每天定时发送邮件的时间
-  send_time=18:05
-  # 发送统计信息的粒度级别, 单位分钟, 默认以10分钟为间隔, 范围1-60
-  granularity_level=30
-  
-  [mail]
-  # 发送者的名称
-  sender=xxx
-  # 收件人的邮箱地址, 多个邮箱以,分隔
-  receive=xxx@dreamdt.cn, yyy@dreamdt.cn
-  # 邮件标题
-  subject=xx项目巡检
+    [autocheck]
+    # 定义当前主机的名称
+    hostname=dream
+    # 预警百分比
+    warning_percent=95
+    # 预警间隔, 单位分钟
+    warning_interval=30
+    # 分析间隔, 单位秒, 最低值为5
+    analysis_interval=15
+    # 数据保留天数
+    keep_days=3
+    
+    [logs]
+    # 日志文件
+    log_file=./logs/autocheck.log
+    # 日志级别
+    log_level=info
+    
+    [host]
+    # 扫描间隔时间, 单位为秒, 最低值为10
+    # 磁盘
+    disk_interval=300
+    # CPU
+    cpu_interval=20
+    # 内存
+    memory_interval=20
+    # Swap
+    swap_interval=300
+    # 查看用户下的资源限制, 多个用户以逗号分隔
+    users_limit=
+    
+    [tomcat]
+    # 是否统计Tomcat
+    check=0
+    # 扫描间隔时间, 单位为秒, 最低值为10
+    tomcat_interval=15
+    # 指定Tomcat的端口, 多个Tomcat以逗号分隔
+    tomcat_port=8080, 8081
+    
+    [redis]
+    # 是否统计Redis
+    check=0
+    # 扫描间隔时间, 单位为秒, 最低值为10
+    redis_interval=15
+    # redis的密码
+    password=xxxxxxxxxxxxxxx
+    # redis端口
+    redis_port=6379
+    # 若未安装sentinel, 则注释掉下面两项
+    # sentinel端口
+    sentinel_port=26379
+    # sentinel监控的集群名称
+    sentinel_name=mymaster
+    
+    [mysql]
+    # 是否统计MySQL
+    check=0
+    # 扫描间隔时间, 单位为秒, 最低值为10
+    mysql_interval=15
+    # 指定MySQL端口
+    mysql_port=3306
+    # 指定MySQL的root密码
+    mysql_password=xxxxxxxxxxx
+    # 指定MySQL主从延迟预警时间, 单位秒
+    seconds_behind_master=5
+    
+    [oracle]
+    # 是否统计Oracle
+    check=0
+    # 扫描间隔时间, 单位为秒, 最低值为10
+    oracle_interval=300
+    # 生成前N个小时的awr报告
+    awr_hours=24
+    
+    [backup]
+    # 是否统计备份
+    check=0
+    # 指定备份文件的目录. 可设置多个, 以,分隔
+    dir=/data, /data2, /data3
+    # 指定备份文件的通用结尾, 多个目录以,分隔
+    regular=tar.gz, tar.gz, tar.gz
+    # 指定每个目录统计的时间(备份完成后的时间), 多个时间以,分隔
+    cron_time=22:05, 23:55, 19:20
+    
+    [matching]
+    # 是否监控文件内容
+    check=1
+    # 监控的文件路径, 与关键字一一对应
+    matching_files=/work/a.log, /work/b.log
+    # 监控的关键字
+    matching_keys=Error, info
+    # 扫描间隔时间, 单位为秒, 最低值为1
+    matching_interval=5
+    
+    [send]
+    # 是否发送24小时的统计信息
+    check=0
+    # 每天定时发送邮件的时间
+    send_time=18:30
+    # 发送统计信息的粒度级别, 单位分钟, 默认以10分钟为间隔, 范围1-60
+    granularity_level=10
+    # 发送者的名称
+    send_sender=xxx
+    # 收件人的邮箱地址, 多个邮箱以,分隔
+    send_receive=xxx1@dreamdt.cn, xxx2@dreamdt.cn
+    # 邮件标题
+    send_subject=xxx项目巡检
+    
+    [notify]
+    # 启用邮件预警
+    mail=0
+    # 发送者的名称
+    mail_sender=xxx
+    # 收件人的邮箱地址, 多个邮箱以,分隔
+    mail_receive=xxx1@dreamdt.cn, xxx2@dreamdt.cn
+    # 邮件标题
+    mail_subject=xxx项目预警
+    
+    # 启用短信提醒
+    sms=0
+    # 短信接收人的手机号
+    sms_receive=11111111111, 22222222222
+    # 短信主题
+    sms_subject=xxx项目预警
 ```
 
 2. 配置完成后执行main.py文件
@@ -217,24 +248,24 @@
 3. 查看运行日志, 无报错信息
 ```
 # cat logs/autocheck.log
-2019-11-28 10:35:14, 607 - INFO: 程序启动...
-2019-11-28 10:35:14, 620 - INFO: Main Pid: 24993
-2019-11-28 10:35:14, 682 - INFO: 开始采集资源信息...
-2019-11-28 10:35:14, 696 - INFO: 开始采集主机资源信息...
-2019-11-28 10:35:14, 696 - INFO: 开始采集磁盘资源信息...
-2019-11-28 10:35:14, 734 - INFO: 开始采集CPU资源信息...
-2019-11-28 10:35:14, 734 - INFO: 开始采集内存资源信息...
-2019-11-28 10:35:14, 734 - INFO: 开始采集Swap资源信息...
-2019-11-28 10:35:14, 734 - INFO: 开始采集启动时间资源信息...
-2019-11-28 10:35:14, 736 - INFO: 开始采集MySQL资源信息...
-2019-12-28 10:35:14, 737 - INFO: 开始记录用户限制信息...
-2019-11-28 10:35:14, 746 - INFO: 开始分析资源信息...
-2019-11-28 10:35:14, 747 - INFO: 开始分析主机资源信息...
-2019-11-28 10:35:14, 749 - INFO: 开始分析MySQL资源信息...
-2019-11-28 10:35:14, 751 - INFO: 清理程序启动...
+2020-07-07 11:17:18, 375 - INFO: 程序启动...
+2020-07-07 11:17:18, 399 - INFO: Main Pid: 25879
+2020-07-07 11:17:18, 400 - INFO: 开始采集资源信息...
+2020-07-07 11:17:18, 415 - INFO: 开始采集主机资源信息...
+2020-07-07 11:17:18, 416 - INFO: 开始采集磁盘资源信息...
+2020-07-07 11:17:18, 450 - INFO: 开始采集CPU资源信息...
+2020-07-07 11:17:18, 450 - INFO: 开始采集内存资源信息...
+2020-07-07 11:17:18, 451 - INFO: 开始采集Swap资源信息...
+2020-07-07 11:17:18, 451 - INFO: 开始采集启动时间资源信息...
+2020-07-07 11:17:18, 456 - INFO: 开始记录用户限制信息...
+2020-07-07 11:17:18, 459 - INFO: 开始采集匹配信息...
+2020-07-07 11:17:18, 478 - INFO: 开始分析资源信息...
+2020-07-07 11:17:18, 480 - INFO: 开始分析主机资源信息...
+2020-07-07 11:17:18, 483 - INFO: 开始分析Matching信息...
+2020-07-07 11:17:18, 484 - INFO: 清理程序启动...
 ```
 
-## 报告示例:
+## 邮件报告示例:
 ### 预警报告示例(将显示在邮件正文)
 - 用户资源限制示例:
 ```
