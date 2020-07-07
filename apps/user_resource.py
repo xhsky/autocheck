@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import database, log, warning, mail
+from lib import database, log, warning, notification
 from lib.tools import format_size
 import os, datetime
 import subprocess
@@ -24,7 +24,7 @@ def record(log_file, log_level, user):
     else:
         logger.logger.error(f"命令'{cmd}'执行报错")
 
-def analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
+def analysis(log_file, log_level, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     logger.logger.debug(f"分析用户的资源限制...")
@@ -44,7 +44,7 @@ def analysis(log_file, log_level, warning_interval, sender_alias, receive, subje
                         f"请在root用户下执行命令: {cmd}, 然后重启登录该用户再重启该用户下相应软件"
         warning_flag=warning.warning(logger, db, flag, f"{i[0]}_limit", arg, warning_interval)
         if warning_flag:
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f"{i[0]}_limit nofile")
+            notification.send(logger, warning_msg, notify_dict, msg=f"{i[0]}_limit nofile")
 
         flag=0
         arg="nproc"
@@ -57,7 +57,7 @@ def analysis(log_file, log_level, warning_interval, sender_alias, receive, subje
                         f"请在root用户下执行命令: {cmd}, 然后重启登录该用户再重启该用户下相应软件"
             warning_flag=warning.warning(logger, db, flag, f"{i[0]}_nproc_limit", arg, warning_interval)
             if warning_flag:
-                mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f"{i[0]}_limit nproc")
+                notification.send(logger, warning_msg, notify_dict, msg=f"{i[0]}_limit nproc")
 
 
 if __name__ == "__main__":

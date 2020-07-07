@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import database, log, warning, mail
+from lib import database, log, warning, notification
 from lib.tools import format_size
 import os, datetime
 
@@ -30,7 +30,7 @@ def record(log_file, log_level, directory, regular):
     sql="insert into backup values(?, ?, ?, ?, ?)"
     db.update_all(sql, backup_info)
 
-def analysis(log_file, log_level, directory, warning_interval, sender_alias, receive, subject):
+def analysis(log_file, log_level, directory, warning_interval, notify_dict):
     """对备份文件进行预警
     1. 备份目录不存在则提示
     2. 当天的备份文件未生成则提示
@@ -67,7 +67,7 @@ def analysis(log_file, log_level, directory, warning_interval, sender_alias, rec
 
     warning_flag=warning.warning(logger, db, flag, f"backup {directory}", value, warning_interval)
     if warning_flag:
-        mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f"{directory} {value}")
+        notify.send(logger, warning_msg, notify_dict, msg=f"{directory} {value}")
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import database, log, mail, tools, warning
+from lib import database, log, notification, tools, warning
 import pymysql.cursors
 import psutil, os
 import datetime, subprocess
@@ -140,7 +140,7 @@ def record(log_file, log_level, mysql_user, mysql_ip, mysql_password, mysql_port
         else:
             conn.close()
 
-def running_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
+def running_analysis(log_file, log_level, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     logger.logger.debug("开始分析MySQL运行情况...")
     db=database.db()
@@ -150,9 +150,9 @@ def running_analysis(log_file, log_level, warning_interval, sender_alias, receiv
     warning_flag=warning.warning(logger, db, flag, "mysql", "running", warning_interval)
     if warning_flag:
         warning_msg=f"MySQL预警:\nMySQL({port})未运行"
-        mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'mysql_running')
+        notification.send(logger, warning_msg, notify_dict, msg=f'mysql_running')
 
-def master_slave_analysis(log_file, log_level, seconds_behind_master, warning_interval, sender_alias, receive, subject):
+def master_slave_analysis(log_file, log_level, seconds_behind_master, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     sql="select role, slave_io_thread, slave_sql_thread, seconds_behind_master, slave_io_state, slave_sql_state from mysql_slave, mysql_role where mysql_role.record_time=mysql_slave.record_time"
@@ -179,7 +179,7 @@ def master_slave_analysis(log_file, log_level, seconds_behind_master, warning_in
                             f"Slave_IO_State: {data[4]}\n"\
                             f"Slave_SQL_Running_State: {data[5]}\n"\
                             f"Seconds_Behind_Master: {data[3]}"
-                    mail.send(logger, warning_msg, sender_alias, receive, subject, msg=msg)
+                    notification.send(logger, warning_msg, notify_dict, msg=msg)
     
 if __name__ == "__main__":
     main()

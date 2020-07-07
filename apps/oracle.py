@@ -3,7 +3,7 @@
 # sky
 
 import subprocess
-from lib import database, mail, log, warning
+from lib import database, notification, log, warning
 import datetime
 import shutil
 
@@ -67,7 +67,7 @@ def record(log_file, log_level):
     else:
         sql="insert into error value(?, ?, ?, ?, ?)"
         db.update_one(sql, (record_time, 'Oracle', 'connect', '无法连接Oracle', 0))
-def tablespace_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+def tablespace_analysis(log_file, log_level, warning_percent, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     sql=f"select tablespace_name, used_percent from oracle where record_time=(select max(record_time) from oracle)"
@@ -82,7 +82,7 @@ def tablespace_analysis(log_file, log_level, warning_percent, warning_interval, 
         warning_flag=warning.warning(logger, db, flag, "oracle", i[0], warning_interval)
         if warning_flag:
             warning_msg=f"Oracle表空间预警:\n{i[0]}表空间已使用{i[1]}%"
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=i[0])
+            notification.send(logger, warning_msg, notify_dict, msg=i[0])
 
 if __name__ == "__main__":
     main()

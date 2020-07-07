@@ -2,7 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import log, database, mail, warning
+from lib import log, database, notification, warning
 import datetime
 import psutil
 
@@ -27,7 +27,7 @@ def disk_record(log_file, log_level):
     sql="insert into disk values(?, ?, ?, ?, ?, ?, ?)"
     db.update_all(sql, disk_list)
 
-def disk_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+def disk_analysis(log_file, log_level, warning_percent, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     sql=f"select record_time, name, used_percent, mounted from disk where record_time=(select max(record_time) from disk)"
@@ -42,7 +42,7 @@ def disk_analysis(log_file, log_level, warning_percent, warning_interval, sender
         warning_flag=warning.warning(logger, db, flag, "disk", i[3], warning_interval)
         if warning_flag:
             warning_msg=f"磁盘预警:\n{i[3]}目录({i[1]})已使用{i[2]}%\n"
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=i[3])
+            notification.send(logger, warning_msg, notify_dict, msg=i[3])
 
 def cpu_record(log_file, log_level):
     logger=log.Logger(log_file, log_level)
@@ -54,7 +54,7 @@ def cpu_record(log_file, log_level):
     cpu_used_percent=psutil.cpu_percent(interval=5)
     db.update_one(sql, (record_time, cpu_count, cpu_used_percent))
 
-def cpu_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+def cpu_analysis(log_file, log_level, warning_percent, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     sql="select record_time, cpu_used_percent from cpu order by record_time desc"
@@ -66,10 +66,11 @@ def cpu_analysis(log_file, log_level, warning_percent, warning_interval, sender_
     if cpu_used_percent >= warning_percent:
         flag=1
         logger.logger.warning(f"CPU当前使用率已达到{cpu_used_percent}%")
+
     warning_flag=warning.warning(logger, db, flag, "cpu", "used_percent", warning_interval)
     if warning_flag:
         warning_msg=f"CPU预警:\nCPU使用率当前已达到{cpu_used_percent}%"
-        mail.send(logger, warning_msg, sender_alias, receive, subject, msg='cpu_used_percent')
+        notification.send(logger, warning_msg, notify_dict, msg='cpu_used_percent')
 
 def memory_record(log_file, log_level):
     logger=log.Logger(log_file, log_level)
@@ -82,7 +83,7 @@ def memory_record(log_file, log_level):
     total, avail, used, used_percent, free=mem[0], mem[1], mem[3], mem[2], mem[4]
     db.update_one(sql, (record_time, total, avail, used, used_percent, free))
 
-def memory_analysis(log_file, log_level, warning_percent, warning_interval, sender_alias, receive, subject):
+def memory_analysis(log_file, log_level, warning_percent, warning_interval, notify):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     sql="select record_time, used_percent from memory order by record_time desc"
@@ -97,7 +98,7 @@ def memory_analysis(log_file, log_level, warning_percent, warning_interval, send
     warning_flag=warning.warning(logger, db, flag, "mem", "used_percent", warning_interval)
     if warning_flag:
         warning_msg=f"内存预警:\n内存当前使用率当前已达到{mem_used_percent}%"
-        mail.send(logger, warning_msg, sender_alias, receive, subject, msg='mem_used_percent')
+        notification.send(logger, warning_msg, notify_dict, msg='mem_used_percent')
 
 def swap_record(log_file, log_level):
     logger=log.Logger(log_file, log_level)

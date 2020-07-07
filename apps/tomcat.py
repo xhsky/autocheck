@@ -2,13 +2,13 @@
 # *-* coding:utf8 *-*
 # sky
 
-from lib import database, mail, log, warning, tools
+from lib import database, notification, log, warning, tools
 import psutil
 import datetime
 import subprocess
 import os
 
-def running_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
+def running_analysis(log_file, log_level, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     logger.logger.debug("开始分析Tomcat运行情况...")
     db=database.db()
@@ -25,9 +25,9 @@ def running_analysis(log_file, log_level, warning_interval, sender_alias, receiv
         warning_flag=warning.warning(logger, db, flag, i[0], "running", warning_interval)
         if warning_flag:
             warning_msg=f"Tomcat预警:\nTomcat({i[0]})未运行\n"
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{i[0]}_running')
+            notification.send(logger, warning_msg, notify_dict, msg=f'tomcat{i[0]}_running')
 
-def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
+def jvm_analysis(log_file, log_level, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
 
@@ -62,7 +62,8 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
         warning_flag=warning.warning(logger, db, ygc_flag, port, "ygc", warning_interval)
         if warning_flag:
             warning_msg=f"Tomcat预警:\nTomcat({port})YGC平均时间为{ygc_time}\n"
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{port}_ygc')
+            notification.send(logger, warning_msg, notify_dict, msg=f'tomcat{port}_ygc')
+
 
         fgc_flag=0
         if fgc_time >= fgc_warning_time:
@@ -71,7 +72,7 @@ def jvm_analysis(log_file, log_level, warning_interval, sender_alias, receive, s
         warning_flag=warning.warning(logger, db, fgc_flag, port, "fgc", warning_interval)
         if warning_flag:
             warning_msg=f"Tomcat预警:\nTomcat({port})FGC平均时间为{fgc_time}\n"
-            mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'tomcat{port}_fgc')
+            notification.send(logger, warning_msg, notify_dict, msg=f'tomcat{port}_fgc')
 
 def record(log_file, log_level, tomcat_port_list):
     logger=log.Logger(log_file, log_level)

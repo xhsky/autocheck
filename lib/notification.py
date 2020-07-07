@@ -2,6 +2,7 @@
 # *-* coding:utf8 *-*
 # sky
 
+
 import smtplib  # 加载smtplib模块
 from email.mime.text import MIMEText
 from email.utils import formataddr
@@ -10,9 +11,12 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from lib import database, conf
 import datetime
-#import subprocess
 
-def send(logger, mail_body, sender_alias, receive, subject, msg=None, attachment_file=None):
+import binascii
+import requests
+
+
+def mail_notification(logger, mail_body, sender_alias, receive, subject, msg=None, attachment_file=None):
     db=database.db()
     hostname=conf.get("autocheck", "hostname")[0]
     try:
@@ -29,9 +33,7 @@ def send(logger, mail_body, sender_alias, receive, subject, msg=None, attachment
 
         message=MIMEMultipart('related')
         message['From']=formataddr([sender_alias, sender])
-        receive_list=[]
-        for i in receive.split(","):
-            receive_list.append(i.strip())
+        receive_list=[x.strip() for x in receive.split(",")]
         message['To']=','.join(receive_list)
         message['Subject']=subject
 
@@ -66,8 +68,55 @@ def send(logger, mail_body, sender_alias, receive, subject, msg=None, attachment
         msg="发送失败"
         
     record_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    sql="insert into mail values(?, ?, ?, ?)"
-    db.update_one(sql, (record_time, sender_alias, receive, msg))
+    sql="insert into notify values(?, ?, ?, ?)"
+    db.update_one(sql, (record_time, "mail", str(receive_list), msg))
+
+def sms_notification(logger, text, to_phone_numbers, subject, msg):
+    db=database.db()
+    hostname=conf.get("autocheck", "hostname")[0]
+    sms_notification_url="http://smartone.10690007.com/proxysms/mt"
+    command="MULTI_MT_REQUEST"
+    spid=20850
+    sppassword="dreamsoft_mcyw"
+    spsc="00"
+    das=",".join([f"86{x.strip()}" for x in to_phone_numbers.split(",")])
+    sign_name="【梦创运维】"
+    sa="098"
+    dc=8
+
+    text=f"主机({hostname}){text}"
+    sm=binascii.hexlify(f"{sign_name} {subject}\n{text}".encode('UTF-16BE'))
+    args={
+            "command":command, 
+            "spid":spid, 
+            "sppassword": sppassword, 
+            "spsc": spsc, 
+            "das": das, 
+            "sa": sa, 
+            "dc": dc, 
+            "sm": sm
+            }
+
+    response=requests.post(sms_notification_url, data=args)
+    if response.status_code == 200:
+        logger.logger.info(f"发送{msg}相关预警短信")
+    else:
+        logger.logger.error(f"发送{msg}相关预警短信失败")
+
+    record_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    sql="insert into notify values(?, ?, ?, ?)"
+    db.update_one(sql, (record_time, "sms", das, msg))
+
+def send(logger, warning_msg, notify_dict, msg):
+    if notify_dict["mail"]["check"] == "1":
+        mail_notification(logger, warning_msg, notify_dict["mail"]["sender_alias"], notify_dict["mail"]["receive"], notify_dict["mail"]["subject"], msg)
+    if notify_dict["sms"]["check"] == "1":
+        sms_notification(logger, warning_msg, notify_dict["sms"]["receive"], notify_dict["sms"]["subject"], msg)
+
+        
 
 if __name__ == "__main__":
-    main()
+    #to_phone_numbers=['13162155703', '15107222094', '18621530408']
+    to_phone_numbers=['13162155703']
+    text="测aaa"
+    sms_notification(to_phone_numbers, text)

@@ -3,11 +3,11 @@
 # sky
 
 from redis import Redis, sentinel
-from lib import database, log, mail, tools, warning
+from lib import database, log, notification, tools, warning
 import psutil, datetime
 
 
-def running_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
+def running_analysis(log_file, log_level, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     logger.logger.debug("开始分析Redis运行情况...")
     db=database.db()
@@ -17,9 +17,9 @@ def running_analysis(log_file, log_level, warning_interval, sender_alias, receiv
     warning_flag=warning.warning(logger, db, flag, "redis", "running", warning_interval)
     if warning_flag:
         warning_msg=f"Redis预警:\nRedis({port})未运行"
-        mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'redis_running')
+        notification.send(logger, warning_msg, notify_dict, msg=f'redis_running')
 
-def master_slave_analysis(log_file, log_level, warning_interval, sender_alias, receive, subject):
+def master_slave_analysis(log_file, log_level, warning_interval,notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     sql="select a.role, a.master_link_status, a.master_host from redis_slave as a,redis_role as b where a.record_time=b.record_time and a.role=b.role"
@@ -36,7 +36,7 @@ def master_slave_analysis(log_file, log_level, warning_interval, sender_alias, r
     warning_flag=warning.warning(logger, db, flag, "redis", "slave", warning_interval)
     if warning_flag:
         warning_msg=f"Redis预警:\nRedis slave无法连接master({data[2]})\n"
-        mail.send(logger, warning_msg, sender_alias, receive, subject, msg=f'redis_slave')
+        mail.send(logger, warning_msg, notify_dict, msg=f'redis_slave')
 
 def record(log_file, log_level, redis_password, redis_port, sentinel_port, sentinel_name, commands):
     logger=log.Logger(log_file, log_level)

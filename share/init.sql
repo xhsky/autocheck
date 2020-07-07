@@ -1,4 +1,4 @@
-create table if not exists status(section varchar(12) not null, option varchar(24) not null, value varchar(1024) default null, flag tinyint default 0, primary key(section, option));
+create table if not exists status(section varchar(12) not null, option varchar(24) not null, value varchar(1024) default null, flag tinyint default 0, primary key(section, option)); -- 为1则该选项必须存在值. 为0则若未配置, 则使用默认值 
 insert into status values('autocheck', 'hostname', 'dream', 1);
 insert into status values('autocheck', 'warning_percent', '95', 1);
 insert into status values('autocheck', 'warning_interval', '30', 1);
@@ -41,12 +41,23 @@ insert into status values('backup', 'check', 0, 1);
 insert into status values('backup', 'dir', null, 1);
 insert into status values('backup', 'regular', null, 1);
 insert into status values('backup', 'cron_time', null, 1);
+insert into status values('matching', 'check', 0, 1);
+insert into status values('matching', 'matching_files', null, 1);
+insert into status values('matching', 'matching_keys', null, 1);
+insert into status values('matching', 'matching_interval', null, 1);
 insert into status values('send', 'check', 0, 1);
 insert into status values('send', 'send_time', null, 1);
 insert into status values('send', 'granularity_level', 10, 1);
-insert into status values('mail', 'sender', null, 1);
-insert into status values('mail', 'receive', null, 1);
-insert into status values('mail', 'subject', null, 1);
+insert into status values('send', 'send_sender', null, 1);
+insert into status values('send', 'send_receive', null, 1);
+insert into status values('send', 'send_subject', null, 1);
+insert into status values('notify', 'mail', 0, 1);
+insert into status values('notify', 'mail_sender', null, 1);
+insert into status values('notify', 'mail_receive', null, 1);
+insert into status values('notify', 'mail_subject', null, 1);
+insert into status values('notify', 'sms', 0, 1);
+insert into status values('notify', 'sms_receive', null, 1);
+insert into status values('notify', 'sms_subject', null, 1);
 
 -- 报错信息表
 create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time, section))
@@ -94,11 +105,12 @@ insert into mysql_role values("Null", "master");
 create table if not exists oracle(record_time text not null, tablespace_name, size float, used float, used_percent float, free float, primary key(record_time, tablespace_name))
 
 -- mail
-create table if not exists mail(record_time text not null, sender, receive, msg);
+create table if not exists notify(record_time text not null, method varchar(4), receive varchar(48), msg varchar(48));
 
 -- user_limit
-create table if not exists users_limit(record_time text not null, user, nofile varchar(12), nproc varchar(12), primary key(record_time, user));
+create table if not exists users_limit(record_time text not null, user varchar(12), nofile varchar(12), nproc varchar(12), primary key(record_time, user));
 
-
+-- matching 
+create table if not exists matching(record_time text not null, matching_file varchar(48), matching_key varchar(12), matching_context varchat(1024), record_filesize int)
 
 
