@@ -3,7 +3,7 @@
 # sky
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-from lib import log, conf, mail, database
+from lib import log, conf, notification, database
 from lib.tools import format_size, printf
 import datetime, os
 import prettytable as pt
@@ -387,34 +387,53 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         else:
             printf("生成awr报告失败, 请自行手动生成")
 
+    # 内容匹配
+    logger.logger.info("统计关键字记录信息...")
+    printf("关键字统计:")
+    sql="select distinct mounted from disk"
+    disk_names=db.query_all(sql)
+    disk_granularity_level=int(60/int(check_dict['host_check'][0])*granularity_level)
+    disk_granularity_level=disk_granularity_level if disk_granularity_level!=0 else 1
+    for i in disk_names:
+        i=i[0]
+        table=pt.PrettyTable(["记录时间", "挂载点", "磁盘名称", "磁盘大小", "已使用大小", "已使用百分比", "可用"])
+        sql=f"select record_time, name, total, used, used_percent, avail from disk "\
+                f"where mounted=? "\
+                f"and record_time > datetime('{now_time}', '{modifier}') "\
+                f"order by record_time"
+        disk_data=db.query_all(sql, (i, ))
+        for index, item in enumerate(disk_data):
+            if index%disk_granularity_level==0 or index==0:
+                total=format_size(item[2])
+                used=format_size(item[3])
+                used_percent=f"{item[4]}%"
+                avail=format_size(item[5])
+                table.add_row((item[0], i, item[1], total, used, used_percent, avail))
+        printf(f"{i}磁盘统计:")
+        printf(table)
+        printf("*"*100)
+
     logger.logger.info("统计资源结束...")
     printf("-"*100)
     end_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     printf(f"统计结束时间: {end_time}")
 
     tar_file=tar_report(logger, report_dir)
-    sender_alias, receive, subject=conf.get("mail",
-            "sender",
-            "receive",
-            "subject"
-            )
 
     warning_msg=f"\n请查看统计报告.\n\n{message}"
-    mail.send(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
+    notification.mail_notification(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
 
 def show():
-    check, send_time, granularity_level=conf.get("send", 
+    check, send_time, granularity_level, sender_alias, receive, subject=conf.get("send", 
             "check", 
             "send_time", 
-            "granularity_level"
+            "granularity_level", 
+            "send_sender", 
+            "send_receive", 
+            "send_subject"
             )
     if check=="1":
         hostname=conf.get("autocheck", "hostname")[0]
-        sender_alias, receive, subject=conf.get("mail", 
-                "sender", 
-                "receive", 
-                "subject"
-                )
         hour, minute=send_time.split(":")
 
         check_dict={
@@ -423,7 +442,8 @@ def show():
                 "redis_check": conf.get("redis", "check", "redis_interval"), 
                 "mysql_check": conf.get("mysql", "check", "mysql_interval"), 
                 "oracle_check": conf.get("oracle", "check", "oracle_interval"),
-                "backup_check": conf.get("backup", "check")[0]
+                "backup_check": conf.get("backup", "check")[0], 
+                "matching_check": conf.get("matching", "check", "matching_interval")
                 }
 
         scheduler=BlockingScheduler()

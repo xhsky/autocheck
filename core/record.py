@@ -4,9 +4,9 @@
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
-from lib import log, conf
-from apps import host, tomcat, redis, backup, mysql, oracle, user_resource
-import datetime
+from lib import log, conf, database
+from apps import host, tomcat, redis, backup, mysql, oracle, user_resource, matching
+import datetime, os
 
 def record():
     log_file, log_level=log.get_log_args()
@@ -152,6 +152,32 @@ def record():
             oracle_interval = min_value
         logger.logger.info("开始记录Oracle信息...")
         scheduler.add_job(oracle.record, 'interval', args=[log_file, log_level], seconds=int(oracle_interval), id='oracle_record')
+
+    # 记录并分析匹配
+    matching_check, matching_files, matching_keys, matching_interal=conf.get("matching",
+            "check", 
+            "matching_files", 
+            "matching_keys", 
+            "matching_interval"
+            )
+    if matching_check=="1":
+        matching_min_value=1
+        if int(matching_interal) < matching_min_value:
+            matching_check = matching_min_value
+        logger.logger.info("开始采集匹配信息...")
+
+        matching_dict=dict(zip([x.strip() for x in matching_files.split(",")], [x.strip() for x in matching_keys.split(",")]))
+        record_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        db=database.db()
+        for matching_file in matching_dict:
+            if os.path.exists(matching_file):
+                sql="insert into matching values(?, ?, ?, ?, ?)"
+                filesize=os.stat(matching_file)[6]
+                db.update_one(sql, (record_time, matching_file, matching_dict[matching_file], "all", filesize))
+            else:
+                logger.logger.error(f"Error: [matching]配置中文件{matching_file}不存在")
+                matching_dict.pop(matching_file)
+        scheduler.add_job(matching.matching_records, 'interval', args=[log_file, log_level, matching_dict], seconds=int(matching_interal), id=f'matching')
 
     scheduler.start()
     
