@@ -83,7 +83,7 @@ def memory_record(log_file, log_level):
     total, avail, used, used_percent, free=mem[0], mem[1], mem[3], mem[2], mem[4]
     db.update_one(sql, (record_time, total, avail, used, used_percent, free))
 
-def memory_analysis(log_file, log_level, warning_percent, warning_interval, notify):
+def memory_analysis(log_file, log_level, warning_percent, warning_interval, notify_dict):
     logger=log.Logger(log_file, log_level)
     db=database.db()
     sql="select record_time, used_percent from memory order by record_time desc"
