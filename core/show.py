@@ -226,7 +226,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         variable_table=pt.PrettyTable(["记录时间", "Pid", "内存使用", "内存使用率", "连接数", "线程数"])
         variable_data=(db.query_all(variable_sql))
         for index, item in enumerate(variable_data):
-            if index%tomcat_granularity_level==0 or index==0:
+            if index%redis_granularity_level==0 or index==0:
                 mem_used=format_size(item[2])
                 mem_used_percent=f"{item[3]:.2f}%"
                 variable_table.add_row((item[0], item[1], mem_used, mem_used_percent, item[4], item[5]))

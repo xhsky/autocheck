@@ -67,7 +67,7 @@ def analysis(log_file, log_level, directory, warning_interval, notify_dict):
 
     warning_flag=warning.warning(logger, db, flag, f"backup {directory}", value, warning_interval)
     if warning_flag:
-        notify.send(logger, warning_msg, notify_dict, msg=f"{directory} {value}")
+        notification.send(logger, warning_msg, notify_dict, msg=f"{directory} {value}")
 
 if __name__ == "__main__":
     main()
