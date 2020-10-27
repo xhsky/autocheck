@@ -1,16 +1,17 @@
-APScheduler==3.6.3
+-i https://pypi.tuna.tsinghua.edu.cn/simple/
+apscheduler==3.6.3
 certifi==2020.6.20
 cffi==1.14.0
 chardet==3.0.4
 configparser==4.0.2
-cryptography==2.9.2
+cryptography==3.2
 gevent==1.4.0
 greenlet==0.4.15
 idna==2.9
 prettytable==0.7.2
 psutil==5.7.0
 pycparser==2.20
-PyMySQL==0.9.3
+pymysql==0.9.3
 pytz==2020.1
 redis==3.3.11
 requests==2.24.0
