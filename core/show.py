@@ -446,7 +446,7 @@ def show(manual=False):
                 "matching_check": conf.get("matching", "check", "matching_interval")
                 }
         if manual:
-            sresource_show(hostname, check_dict, int(granularity_level), sender_alias, receive, subject)
+            resource_show(hostname, check_dict, int(granularity_level), sender_alias, receive, subject)
         else:
             scheduler=BlockingScheduler()
             #scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
