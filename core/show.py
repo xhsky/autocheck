@@ -423,7 +423,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
     warning_msg=f"\n请查看统计报告.\n\n{message}"
     notification.mail_notification(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
 
-def show():
+def show(manual=False):
     check, send_time, granularity_level, sender_alias, receive, subject=conf.get("send", 
             "check", 
             "send_time", 
@@ -445,11 +445,13 @@ def show():
                 "backup_check": conf.get("backup", "check")[0], 
                 "matching_check": conf.get("matching", "check", "matching_interval")
                 }
-
-        scheduler=BlockingScheduler()
-        #scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
-        scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
-        scheduler.start()
+        if manual:
+            sresource_show(hostname, check_dict, int(granularity_level), sender_alias, receive, subject)
+        else:
+            scheduler=BlockingScheduler()
+            #scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
+            scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
+            scheduler.start()
         
 if __name__ == "__main__":
     main()

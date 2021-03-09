@@ -154,6 +154,11 @@ def control(action, pid=None):
             print("Clean...")
         except Exception as e:
             print(f"Clean Error: {e}")
+    elif action=="sendmail":
+        if pid is None:
+            print(f"程序未运行...")
+        else:
+            show.show(manual=True)
 
 def usage(action):
     pid=get_pid("./logs/autocheck.pid")
@@ -170,7 +175,7 @@ def usage(action):
     elif action=="status":
         control("status", pid)
     elif action=="sendmail":
-        pass
+        control("sendmail", pid)
     elif action=="clean":
         control("clean", pid)
     else:
