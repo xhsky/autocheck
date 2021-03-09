@@ -21,7 +21,7 @@ def mail_notification(logger, mail_body, sender_alias, receive, subject, msg=Non
     hostname=conf.get("autocheck", "hostname")[0]
     try:
         """网易企业邮箱, 巨坑....
-        1.授权码必须手动指定, 不能自动生成
+        1.授权码必须手动指定, 不能自动生成. 代码使用的password为授权码
         2.企业邮箱的smtp是单独的, 不是统一的
         3.登录不能有二次验证(短信等)
         """
