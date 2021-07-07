@@ -125,18 +125,25 @@ def control(action, pid=None):
             main()
         else:
             print(f"程序({pid})正在运行...")
+            flag=ALREADY_RUNNING
     elif action=="stop":
         if pid is None:
             print(f"程序未运行...")
+            flag=NOT_RUNNING
         else:
             print("程序关闭...")
             logger.logger.info("程序关闭...")
-            os.kill(pid, 9)
+            try:
+                os.kill(pid, 9)
+                flag=NORMAL
+            except Exception:
+                flag=ABNORMAL
     elif action=="status":
         if pid is None:
             print("程序未运行...")
         else:
             print(f"程序({pid})正在运行...")
+        return ALREADY_RUNNING
     elif action=="clean":
         if pid is not None:
             print("程序关闭...")
@@ -152,34 +159,41 @@ def control(action, pid=None):
                 os.remove(data_file)
             logger.logger.info("Clean...")
             print("Clean...")
+            flag=NORMAL
         except Exception as e:
             print(f"Clean Error: {e}")
+            flag=ABNORMAL
+        return flag
     elif action=="sendmail":
         if pid is None:
             print(f"程序未运行...")
+            flag=NOT_RUNNING
         else:
-            show.show(manual=True)
+            flag=show.show(manual=True)
+    return flag
 
 def usage(action):
     pid=get_pid("./logs/autocheck.pid")
     if action=="usage":
         print(f"Usage: {sys.argv[0]} start|stop|restart|status|sendmail")
+        flag=ABNORMAL
     elif action=="start":
-        control("start", pid)
+        flag=control("start", pid)
     elif action=="restart":
         control("stop", pid)
         time.sleep(1)
-        control("start", None)
+        flag=control("start", None)
     elif action=="stop":
-        control("stop", pid)
+        flag=control("stop", pid)
     elif action=="status":
-        control("status", pid)
+        flag=control("status", pid)
     elif action=="sendmail":
-        control("sendmail", pid)
+        flag=control("sendmail", pid)
     elif action=="clean":
-        control("clean", pid)
+        flag=control("clean", pid)
     else:
-        usage("usage")
+        flag=usage("usage")
+    return flag
 
 def get_pid(pid_file):
     if os.path.exists(pid_file):
@@ -194,6 +208,10 @@ def get_pid(pid_file):
     return None
 
 if __name__ == "__main__":
+    ABNORMAL=125
+    NOT_RUNNING=1
+    ALREADY_RUNNING=2
+    NORMAL=0
     if len(sys.argv)==2:
         rootdir=os.path.dirname(__file__)
         os.chdir(rootdir)
@@ -206,9 +224,9 @@ if __name__ == "__main__":
             logger=log.Logger(log_file, log_level)
         except Exception as e:
             print(f"Error: {e}")
-            exit()
+            sys.exit(ABNORMAL)
         action=sys.argv[1]
-        usage(action)
+        flag=usage(action)
     else:
-        usage("usage")
-
+        flag=usage("usage")
+    sys.exit(flag)
