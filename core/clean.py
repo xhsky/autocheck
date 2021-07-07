@@ -11,6 +11,7 @@ def clean_data(logger, keep_days):
     db=database.db()
     all_tables=db.query_all("select name from sqlite_master where type='table'")
     now_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    logger.logger.debug("清理表: {all_tables}")
     for i in all_tables:
         table=i[0]
         sql=f"pragma table_info('{table}')"

@@ -10,12 +10,16 @@ import datetime, subprocess
 def export_slow_log(logger, mysql_user, mysql_ip, mysql_password, mysql_port, slow_ana_file, slow_file):
     """获取慢日志
     """
-    conn=pymysql.connect(
-            host=mysql_ip,
-            port=int(mysql_port), 
-            user=mysql_user, 
-            password=mysql_password
-            )
+    try:
+        conn=pymysql.connect(
+                host=mysql_ip,
+                port=int(mysql_port), 
+                user=mysql_user, 
+                password=mysql_password
+                )
+    except Exception as e:
+        return 2, str(e)
+
     with conn.cursor() as cursor:
         sql='show variables where variable_name="slow_query_log"'
         cursor.execute(sql)

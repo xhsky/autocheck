@@ -13,8 +13,11 @@ insert into status values('host', 'users_limit', 'root', 1);
 insert into status values('logs', 'log_file', './logs/autocheck.log', 1);
 insert into status values('logs', 'log_level', 'info', 1);
 insert into status values('tomcat', 'check', 0, 1);
-insert into status values('tomcat', 'tomcat_interval', "30", 1);
+insert into status values('tomcat', 'tomcat_interval', '30', 1);
 insert into status values('tomcat', 'tomcat_port', null, 1);
+insert into status values('nginx', 'check', 0, 1);
+insert into status values('nginx', 'nginx_interval', '5', 1);
+insert into status values('nginx', 'nginx_port', null, 1);
 --insert into status values('tomcat', 'ygc_time', 1, 0);
 --insert into status values('tomcat', 'fgc_time', 10, 0);
 --insert into status values('tomcat', 'java_home', null, 1);
@@ -77,6 +80,10 @@ create table if not exists tomcat_jstat8(record_time text not null, port int, S0
 create table if not exists tomcat_jstat7(record_time text not null, port int, S0 float, S1 float, E float, O float, P float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, port));
 create table if not exists tomcat_java_version(version varchar(12));
 insert into tomcat_java_version values('8');
+
+-- nginx
+create table if not exists nginx_constant(record_time text not null, pid int, port int, boot_time text default null, cmdline text default null, primary key(record_time, port));
+create table if not exists nginx_variable(record_time text not null, pid int, port int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, pid));
 
 -- redis
 create table if not exists redis_constant(record_time text not null, pid int, port int, boot_time text default null, primary key(record_time, pid));

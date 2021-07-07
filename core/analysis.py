@@ -85,6 +85,14 @@ def analysis():
         scheduler.add_job(tomcat.running_analysis, 'interval', args=[log_file, log_level, warning_interval, notify_dict], seconds=tomcat_interval, id='tomcat_run_ana')
         scheduler.add_job(tomcat.jvm_analysis, 'interval', args=[log_file, log_level, warning_interval, notify_dict], seconds=tomcat_interval, id='tomcat_jvm_ana')
 
+    # nginx资源
+    nginx_check=conf.get("nginx", "check")[0]
+    if nginx_check=='1':
+        nginx_interval=conf.get("nginx", "nginx_interval")[0]
+        nginx_interval=int(nginx_interval)+analysis_interval
+        logger.logger.info("开始分析Nginx资源信息...")
+        scheduler.add_job(nginx.running_analysis, 'interval', args=[log_file, log_level, warning_interval, notify_dict], seconds=nginx_interval, id='nginx_run_ana')
+
     # redis资源
     redis_check=conf.get("redis", "check")[0]
     if redis_check=="1":

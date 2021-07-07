@@ -202,6 +202,48 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             printf(jvm_table)
             printf("*"*100)
 
+    # Nginx
+    if check_dict["nginx_check"][0]=="1":
+        logger.logger.info("统计Nginx记录信息...")
+        printf("Nginx统计:")
+        nginx_granularity_level=int(60/int(check_dict['nginx_check'][1])*granularity_level)
+        nginx_granularity_level=nginx_granularity_level if nginx_granularity_level!=0 else 1
+        #version=db.query_one("select version from tomcat_java_version")[0]
+        #printf(f"Java版本: {version}")
+        #printf("*"*100)
+        #sql="select distinct port from tomcat_constant"
+        #tomcat_ports=db.query_all(sql)
+        nginx_ports=conf.get("nginx", "nginx_port")[0].split(",")
+        nginx_constant_data=[]
+        for i in nginx_ports:
+            port=int(i.strip())
+            constant_sql=f"select record_time, pid, port, boot_time, cmdline from nginx_constant "\
+                    f"where port=? "\
+                    f"and '{now_time}' >= record_time "\
+                    f"order by record_time desc"
+            variable_sql=f"select record_time, pid, men_used, mem_used_percent, connections, threads_num from nginx_variable "\
+                    f"where port=? "\
+                    f"and record_time > datetime('{now_time}', '{modifier}') "\
+                    f"order by record_time"
+
+            constant_table=pt.PrettyTable(["记录时间", "Pid", "端口", "启动时间", "启动参数"])
+            nginx_constant_data=(db.query_one(constant_sql, (port, )))
+            constant_table.add_row(nginx_constant_data)
+
+            variable_table=pt.PrettyTable(["记录时间", "Pid", "内存使用", "内存使用率", "连接数", "线程数"])
+            nginx_variable_data=(db.query_all(variable_sql, (port, )))
+            for index, item in enumerate(nginx_variable_data):
+                if index%nginx_granularity_level==0 or index==0:
+                    mem_used=format_size(item[2])
+                    mem_used_percent=f"{item[3]:.2f}%"
+                    variable_table.add_row((item[0], item[1], mem_used, mem_used_percent, item[4], item[5]))
+            printf(f"Nginx({port})统计信息:")
+            printf("启动信息:")
+            printf(constant_table)
+            printf("运行信息:")
+            printf(variable_table)
+            printf("*"*100)
+
     # Redis
     if check_dict["redis_check"][0]=="1":
         logger.logger.info("统计Redis记录信息...")

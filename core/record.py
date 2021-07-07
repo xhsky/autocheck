@@ -5,7 +5,7 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from lib import log, conf, database
-from apps import host, tomcat, redis, backup, mysql, oracle, user_resource, matching
+from apps import host, tomcat, redis, backup, mysql, oracle, user_resource, matching, nginx
 import datetime, os
 
 def record():
@@ -80,6 +80,22 @@ def record():
         if int(tomcat_interval) < min_value:
             tomcat_interval=min_value
         scheduler.add_job(tomcat.record, 'interval', args=[log_file, log_level, tomcat_port_list], seconds=int(tomcat_interval), id='tomcat_record')
+
+    # nginx资源
+    nginx_min_value=5
+    nginx_check, nginx_interval, nginx_port=conf.get("nginx", 
+            "check", 
+            "nginx_interval", 
+            "nginx_port", 
+            )
+    if nginx_check=='1':
+        logger.logger.info("开始采集Nginx资源信息...")
+        nginx_port_list=[]                                                 # 将nginx_port参数改为列表
+        for i in nginx_port.split(","):
+            nginx_port_list.append(i.strip())
+        if int(nginx_interval) < nginx_min_value:
+            nginx_interval=nginx_min_value
+        scheduler.add_job(nginx.record, 'interval', args=[log_file, log_level, nginx_port_list], seconds=int(nginx_interval), id='nginx_record')
 
     # redis资源
     redis_check, redis_interval, redis_password, redis_port, sentinel_port, sentinel_name, commands=conf.get("redis", 
