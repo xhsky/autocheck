@@ -5,7 +5,7 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from lib import log, conf
-from apps import host, tomcat, redis, backup, mysql, oracle, user_resource, matching
+from apps import host, tomcat, redis, backup, nginx, mysql, oracle, user_resource, matching
 import datetime
 
 def analysis():

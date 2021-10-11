@@ -62,7 +62,6 @@ def mail_notification(logger, mail_body, sender_alias, receive, subject, msg=Non
             logger.logger.info(f"发送{msg}相关预警邮件")
         elif flag==1:
             logger.logger.info(f"发送资源统计邮件")
-
     except Exception as e:
         logger.logger.error(f"邮件发送失败: {e}")
         msg="发送失败"

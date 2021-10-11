@@ -24,7 +24,7 @@ def running_analysis(log_file, log_level, warning_interval, notify_dict):
             flag=1
         warning_flag=warning.warning(logger, db, flag, i[0], "running", warning_interval)
         if warning_flag:
-            warning_msg=f"Nginx预警:\Nginx({i[0]})未运行\n"
+            warning_msg=f"Nginx预警: Nginx({i[0]})未运行\n"
             notification.send(logger, warning_msg, notify_dict, msg=f'nginx{i[0]}_running')
 
 def record(log_file, log_level, nginx_port_list):
@@ -56,7 +56,7 @@ def record(log_file, log_level, nginx_port_list):
             nginx_connections=len(nginx_info["connections"])
             nginx_num_threads=nginx_info["num_threads"]
             variable_data=(record_time, pid, port, nginx_memory, nginx_memory_percent, nginx_connections, nginx_num_threads)
-            variable_sql="insert into tomcat_variable values(?, ?, ?, ?, ?, ?, ?)"
+            variable_sql="insert into nginx_variable values(?, ?, ?, ?, ?, ?, ?)"
             db.update_one(variable_sql, variable_data)
 
 if __name__ == "__main__":

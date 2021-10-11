@@ -63,7 +63,9 @@ insert into status values('notify', 'sms_receive', null, 1);
 insert into status values('notify', 'sms_subject', null, 1);
 
 -- 报错信息表
+-- 连接失败记录
 create table if not exists error(record_time text not null, section varchar(1024), value varchar(1024), error_msg text, debug tinyint, primary key(record_time, section))
+-- 出现预警记录
 create table if not exists warning_record(record_time text not null, section varchar(1024), value varchar(1024), debug boolean)
 
 --主机资源
@@ -75,7 +77,7 @@ create table if not exists boot_time(record_time text not null primary key, boot
 
 -- tomcat
 create table if not exists tomcat_constant(record_time text not null, pid int, port int, boot_time text default null, cmdline text default null, primary key(record_time, port));
-create table if not exists tomcat_variable(record_time text not null, pid int, port int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, pid));
+create table if not exists tomcat_variable(record_time text not null, pid int, port int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, port));
 create table if not exists tomcat_jstat8(record_time text not null, port int, S0 float, S1 float, E float, O float, M float, CCS float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, port));
 create table if not exists tomcat_jstat7(record_time text not null, port int, S0 float, S1 float, E float, O float, P float, YGC int, YGCT float, FGC int, FGCT float, GCT float, primary key(record_time, port));
 create table if not exists tomcat_java_version(version varchar(12));
@@ -83,7 +85,7 @@ insert into tomcat_java_version values('8');
 
 -- nginx
 create table if not exists nginx_constant(record_time text not null, pid int, port int, boot_time text default null, cmdline text default null, primary key(record_time, port));
-create table if not exists nginx_variable(record_time text not null, pid int, port int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, pid));
+create table if not exists nginx_variable(record_time text not null, pid int, port int, men_used int default null, mem_used_percent int default null, connections int default null, threads_num int default null, primary key(record_time, port));
 
 -- redis
 create table if not exists redis_constant(record_time text not null, pid int, port int, boot_time text default null, primary key(record_time, pid));

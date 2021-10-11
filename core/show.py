@@ -270,11 +270,6 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
             printf("Nginx统计:")
             nginx_granularity_level=int(60/int(check_dict['nginx_check'][1])*granularity_level)
             nginx_granularity_level=nginx_granularity_level if nginx_granularity_level!=0 else 1
-            #version=db.query_one("select version from tomcat_java_version")[0]
-            #printf(f"Java版本: {version}")
-            #printf("*"*100)
-            #sql="select distinct port from tomcat_constant"
-            #tomcat_ports=db.query_all(sql)
             nginx_ports=conf.get("nginx", "nginx_port")[0].split(",")
             nginx_constant_data=[]
             for i in nginx_ports:
@@ -462,6 +457,7 @@ def resource_show(hostname, check_dict, granularity_level, sender_alias, receive
         printf(f"统计结束时间: {end_time}")
 
         tar_file=tar_report(logger, report_dir)
+        logger.logger.info(f"生成统计报告文件: {tar_file}")
 
         warning_msg=f"\n请查看统计报告.\n\n{message}"
         notification.mail_notification(logger, warning_msg, sender_alias, receive, subject, msg="report", attachment_file=tar_file)
@@ -486,6 +482,7 @@ def show(manual=False):
         check_dict={
                 "host_check": conf.get("host", "disk_interval", "cpu_interval", "memory_interval", "swap_interval"), 
                 "tomcat_check": conf.get("tomcat", "check", "tomcat_interval"), 
+                "nginx_check": conf.get("nginx", "check", "nginx_interval"), 
                 "redis_check": conf.get("redis", "check", "redis_interval"), 
                 "mysql_check": conf.get("mysql", "check", "mysql_interval"), 
                 "oracle_check": conf.get("oracle", "check", "oracle_interval"),
@@ -500,6 +497,9 @@ def show(manual=False):
             #scheduler.add_job(resource_show, 'date', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], run_date=(datetime.datetime.now()+datetime.timedelta(seconds=3)).strftime("%Y-%m-%d %H:%M:%S"), id='resource_show')
             scheduler.add_job(resource_show, 'cron', args=[hostname, check_dict, int(granularity_level), sender_alias, receive, subject], day_of_week='0-6', hour=int(hour), minute=int(minute), id='resource_show')
             scheduler.start()
+    else:
+        print("Error: 未开启巡检")
+        return 125
         
 if __name__ == "__main__":
     main()
